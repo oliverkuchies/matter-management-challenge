@@ -8,11 +8,29 @@ export interface Matter {
   updatedAt: string;
 }
 
+export interface CurrencyValue {
+  amount: number;
+  currency: string;
+}
+
+export interface UserValue {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  displayName: string;
+}
+
+export interface StatusValue {
+  statusId: string;
+  groupName: string;
+}
+
 export interface FieldValue {
   fieldId: string;
   fieldName: string;
   fieldType: FieldType;
-  value: any;
+  value: string | number | boolean | Date | CurrencyValue | UserValue | StatusValue | null;
   displayValue?: string;
 }
 

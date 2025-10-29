@@ -12,7 +12,7 @@ export interface FieldValue {
   fieldId: string;
   fieldName: string;
   fieldType: FieldType;
-  value: string | number | boolean | Date | CurrencyValue | UserValue | null;
+  value: string | number | boolean | Date | CurrencyValue | UserValue | StatusValue | null;
   displayValue?: string;
 }
 
@@ -27,6 +27,11 @@ export interface UserValue {
   firstName: string;
   lastName: string;
   displayName: string;
+}
+
+export interface StatusValue {
+  statusId: string;
+  groupName: string;
 }
 
 export type FieldType = 'text' | 'number' | 'select' | 'date' | 'currency' | 'boolean' | 'status' | 'user';

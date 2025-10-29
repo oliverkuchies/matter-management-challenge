@@ -1,6 +1,6 @@
-import { SLAStatus } from '../types/matter';
+import { SLAStatus, CurrencyValue } from '../types/matter';
 
-export function formatCurrency(value: any): string {
+export function formatCurrency(value: CurrencyValue | null): string {
   if (!value || typeof value !== 'object') return 'N/A';
   
   const { amount, currency } = value;

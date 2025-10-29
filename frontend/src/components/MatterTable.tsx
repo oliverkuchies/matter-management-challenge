@@ -1,4 +1,4 @@
-import { Matter } from '../types/matter';
+import { Matter, CurrencyValue } from '../types/matter';
 import {
   formatCurrency,
   formatDate,
@@ -40,15 +40,15 @@ export function MatterTable({ matters, sortBy, sortOrder, onSort }: MatterTableP
 
     switch (field.fieldType) {
       case 'currency':
-        return <span className="font-medium">{formatCurrency(field.value)}</span>;
+        return <span className="font-medium">{formatCurrency(field.value as CurrencyValue | null)}</span>;
       
       case 'date':
-        return <span>{formatDate(field.value)}</span>;
+        return <span>{formatDate(field.value as string | null)}</span>;
       
       case 'boolean':
         return (
           <span className={field.value ? 'text-green-600' : 'text-gray-400'}>
-            {formatBoolean(field.value)}
+            {formatBoolean(field.value as boolean | null)}
           </span>
         );
       

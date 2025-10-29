@@ -1,6 +1,7 @@
 import pool from '../../../db/pool.js';
-import { Matter, MatterListParams, FieldValue, UserValue, CurrencyValue } from '../../types.js';
+import { Matter, MatterListParams, FieldValue, UserValue, CurrencyValue, StatusValue } from '../../types.js';
 import logger from '../../../utils/logger.js';
+import { PoolClient } from 'pg';
 
 export class MatterRepo {
   /**
@@ -34,9 +35,9 @@ export class MatterRepo {
     try {
       // TODO: Implement search condition
       // Currently search is not implemented - add ILIKE queries with pg_trgm
-      let searchCondition = '';
+      const searchCondition = '';
       const queryParams: (string | number)[] = [];
-      let paramIndex = 1;
+      const paramIndex = 1;
 
       // Determine sort column
       let orderByClause = 'tt.created_at DESC';
@@ -127,7 +128,7 @@ export class MatterRepo {
   /**
    * Get all field values for a matter
    */
-  private async getMatterFields(client: any, ticketId: string): Promise<Record<string, FieldValue>> {
+  private async getMatterFields(client: PoolClient, ticketId: string): Promise<Record<string, FieldValue>> {
     const fieldsResult = await client.query(
       `SELECT 
         ttfv.id,
@@ -166,7 +167,7 @@ export class MatterRepo {
     const fields: Record<string, FieldValue> = {};
 
     for (const row of fieldsResult.rows) {
-      let value: any = null;
+      let value: string | number | boolean | Date | CurrencyValue | UserValue | StatusValue | null = null;
       let displayValue: string | undefined = undefined;
 
       switch (row.field_type) {
@@ -175,11 +176,11 @@ export class MatterRepo {
           break;
         case 'number':
           value = row.number_value ? parseFloat(row.number_value) : null;
-          displayValue = value?.toLocaleString();
+          displayValue = value !== null ? value.toLocaleString() : undefined;
           break;
         case 'date':
           value = row.date_value;
-          displayValue = value ? new Date(value).toLocaleDateString() : undefined;
+          displayValue = row.date_value ? new Date(row.date_value).toLocaleDateString() : undefined;
           break;
         case 'boolean':
           value = row.boolean_value;
@@ -187,20 +188,21 @@ export class MatterRepo {
           break;
         case 'currency':
           value = row.currency_value as CurrencyValue;
-          if (value) {
-            displayValue = `${value.amount.toLocaleString()} ${value.currency}`;
+          if (row.currency_value) {
+            displayValue = `${(row.currency_value as CurrencyValue).amount.toLocaleString()} ${(row.currency_value as CurrencyValue).currency}`;
           }
           break;
         case 'user':
           if (row.user_id) {
-            value = {
+            const userValue: UserValue = {
               id: row.user_id,
               email: row.user_email,
               firstName: row.user_first_name,
               lastName: row.user_last_name,
               displayName: `${row.user_first_name} ${row.user_last_name}`,
-            } as UserValue;
-            displayValue = value.displayName;
+            };
+            value = userValue;
+            displayValue = userValue.displayName;
           }
           break;
         case 'select':
@@ -212,10 +214,10 @@ export class MatterRepo {
           displayValue = row.status_option_label;
           // Store group name in metadata for SLA calculations
           if (row.status_group_name) {
-            (value as any) = {
+            value = {
               statusId: row.status_reference_value_uuid,
               groupName: row.status_group_name,
-            };
+            } as StatusValue;
           }
           break;
       }
@@ -239,7 +241,7 @@ export class MatterRepo {
     matterId: string,
     fieldId: string,
     fieldType: string,
-    value: any,
+    value: string | number | boolean | Date | CurrencyValue | UserValue | StatusValue | null,
     userId: number,
   ): Promise<void> {
     const client = await pool.connect();
@@ -249,24 +251,24 @@ export class MatterRepo {
 
       // Determine which column to update based on field type
       let columnName: string;
-      let columnValue: any = null;
+      let columnValue: string | number | boolean | Date | null = null;
 
       switch (fieldType) {
         case 'text':
           columnName = 'text_value';
-          columnValue = value;
+          columnValue = value as string;
           break;
         case 'number':
           columnName = 'number_value';
-          columnValue = value;
+          columnValue = value as number;
           break;
         case 'date':
           columnName = 'date_value';
-          columnValue = value;
+          columnValue = value as Date;
           break;
         case 'boolean':
           columnName = 'boolean_value';
-          columnValue = value;
+          columnValue = value as boolean;
           break;
         case 'currency':
           columnName = 'currency_value';
@@ -274,15 +276,15 @@ export class MatterRepo {
           break;
         case 'user':
           columnName = 'user_value';
-          columnValue = value;
+          columnValue = value as number;
           break;
         case 'select':
           columnName = 'select_reference_value_uuid';
-          columnValue = value;
+          columnValue = value as string;
           break;
-        case 'status':
+        case 'status': {
           columnName = 'status_reference_value_uuid';
-          columnValue = value;
+          columnValue = value as string;
           
           // Track status change in cycle time history
           const currentStatusResult = await client.query(
@@ -303,6 +305,7 @@ export class MatterRepo {
             );
           }
           break;
+        }
         default:
           throw new Error(`Unsupported field type: ${fieldType}`);
       }

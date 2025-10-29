@@ -1,6 +1,6 @@
 import { MatterRepo } from '../repo/matter_repo.js';
 import { CycleTimeService } from './cycle_time_service.js';
-import { Matter, MatterListParams, MatterListResponse } from '../../types.js';
+import { Matter, MatterListParams, MatterListResponse, StatusValue, CurrencyValue, UserValue } from '../../types.js';
 
 export class MatterService {
   private matterRepo: MatterRepo;
@@ -23,7 +23,7 @@ export class MatterService {
         let statusGroupName: string | null = null;
         
         if (statusField && statusField.value && typeof statusField.value === 'object') {
-          statusGroupName = (statusField.value as any).groupName || null;
+          statusGroupName = (statusField.value as StatusValue).groupName || null;
         }
 
         const { cycleTime, sla } = await this.cycleTimeService.calculateCycleTimeAndSLA(
@@ -62,7 +62,7 @@ export class MatterService {
     let statusGroupName: string | null = null;
     
     if (statusField && statusField.value && typeof statusField.value === 'object') {
-      statusGroupName = (statusField.value as any).groupName || null;
+      statusGroupName = (statusField.value as StatusValue).groupName || null;
     }
 
     const { cycleTime, sla } = await this.cycleTimeService.calculateCycleTimeAndSLA(
@@ -81,7 +81,7 @@ export class MatterService {
     matterId: string,
     fieldId: string,
     fieldType: string,
-    value: any,
+    value: string | number | boolean | Date | CurrencyValue | UserValue | StatusValue | null,
     userId: number,
   ): Promise<void> {
     await this.matterRepo.updateMatterField(matterId, fieldId, fieldType, value, userId);
