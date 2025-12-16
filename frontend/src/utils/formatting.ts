@@ -42,16 +42,3 @@ export function getSLABadgeColor(sla: SLAStatus): string {
   }
 }
 
-export function getStatusBadgeColor(statusLabel: string): string {
-  switch (statusLabel.toLowerCase()) {
-    case 'to do':
-      return 'bg-gray-100 text-gray-800';
-    case 'in progress':
-      return 'bg-blue-100 text-blue-800';
-    case 'done':
-      return 'bg-green-100 text-green-800';
-    default:
-      return 'bg-purple-100 text-purple-800';
-  }
-}
-

@@ -1,12 +1,12 @@
-import pool from '../../../db/pool.js';
+import { Repository } from '../../../repository/repository.js';
 import { Field, StatusGroup } from '../../types.js';
+import { CurrencyOptionRow, FieldOptionRow, FieldRow, StatusGroupRow, StatusOptionRow } from './types/field_types.js';
 
-export class FieldsRepo {
+export class FieldsRepo extends Repository {
   async getAllFields(accountId: number): Promise<Field[]> {
-    const client = await pool.connect();
-    
-    try {
-      const fieldsResult = await client.query(
+    return this.executeAndRelease(async (client) => {
+      const fieldsRows = await this.queryRows<FieldRow>(
+        client,
         `SELECT id, account_id, name, field_type, description, metadata, system_field
          FROM ticketing_fields
          WHERE account_id = $1 AND deleted_at IS NULL
@@ -16,7 +16,7 @@ export class FieldsRepo {
 
       const fields: Field[] = [];
 
-      for (const row of fieldsResult.rows) {
+      for (const row of fieldsRows) {
         const field: Field = {
           id: row.id,
           accountId: row.account_id,
@@ -29,14 +29,15 @@ export class FieldsRepo {
 
         // Fetch options for select fields
         if (row.field_type === 'select') {
-          const optionsResult = await client.query(
+          const optionsRows = await this.queryRows<FieldOptionRow>(
+            client,
             `SELECT id, label, sequence
              FROM ticketing_field_options
              WHERE ticket_field_id = $1 AND deleted_at IS NULL
              ORDER BY sequence`,
             [row.id],
           );
-          field.options = optionsResult.rows.map((opt) => ({
+          field.options = optionsRows.map((opt) => ({
             id: opt.id,
             label: opt.label,
             sequence: opt.sequence,
@@ -45,7 +46,8 @@ export class FieldsRepo {
 
         // Fetch status options for status fields
         if (row.field_type === 'status') {
-          const statusResult = await client.query(
+          const statusRows = await this.queryRows<StatusOptionRow>(
+            client,
             `SELECT tfso.id, tfso.label, tfso.group_id, tfsg.name as group_name, tfso.sequence
              FROM ticketing_field_status_options tfso
              JOIN ticketing_field_status_groups tfsg ON tfso.group_id = tfsg.id
@@ -53,7 +55,7 @@ export class FieldsRepo {
              ORDER BY tfso.sequence`,
             [row.id],
           );
-          field.statusOptions = statusResult.rows.map((opt) => ({
+          field.statusOptions = statusRows.map((opt) => ({
             id: opt.id,
             label: opt.label,
             groupId: opt.group_id,
@@ -66,16 +68,13 @@ export class FieldsRepo {
       }
 
       return fields;
-    } finally {
-      client.release();
-    }
+    });
   }
 
   async getStatusGroups(accountId: number): Promise<StatusGroup[]> {
-    const client = await pool.connect();
-    
-    try {
-      const result = await client.query(
+    return this.executeAndRelease(async (client) => {
+      const rows = await this.queryRows<StatusGroupRow>(
+        client,
         `SELECT id, name, sequence
          FROM ticketing_field_status_groups
          WHERE account_id = $1 AND deleted_at IS NULL
@@ -83,21 +82,18 @@ export class FieldsRepo {
         [accountId],
       );
 
-      return result.rows.map((row) => ({
+      return rows.map((row) => ({
         id: row.id,
         name: row.name,
         sequence: row.sequence,
       }));
-    } finally {
-      client.release();
-    }
+    });
   }
 
   async getCurrencyOptions(accountId: number) {
-    const client = await pool.connect();
-    
-    try {
-      const result = await client.query(
+    return this.executeAndRelease(async (client) => {
+      const rows = await this.queryRows<CurrencyOptionRow>(
+        client,
         `SELECT id, code, name, symbol, sequence
          FROM ticketing_currency_field_options
          WHERE account_id = $1 AND deleted_at IS NULL
@@ -105,18 +101,15 @@ export class FieldsRepo {
         [accountId],
       );
 
-      return result.rows.map((row) => ({
+      return rows.map((row) => ({
         id: row.id,
         code: row.code,
         name: row.name,
         symbol: row.symbol,
         sequence: row.sequence,
       }));
-    } finally {
-      client.release();
-    }
+    });
   }
 }
 
 export default FieldsRepo;
-

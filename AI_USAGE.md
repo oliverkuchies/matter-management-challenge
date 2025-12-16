@@ -1,1 +1,0 @@
-- Used AI to create Storybook components for Matter table and Pagination. This will be easier for me to test transitions without mutating the sample data.

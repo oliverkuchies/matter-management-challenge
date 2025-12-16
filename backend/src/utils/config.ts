@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ path: '../.env' });
 
 const configSchema = z.object({
   DATABASE_URL: z.string().url(),
@@ -11,7 +11,14 @@ const configSchema = z.object({
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
 });
 
-export const config = configSchema.parse(process.env);
+const parsedConfig = configSchema.safeParse(process.env);
 
-export default config;
+if (!parsedConfig.success) {
+  throw new Error(`Invalid environment variables: ${JSON.stringify(parsedConfig.error.format())}`);
+}
+
+const config = parsedConfig.data;
+
+export { config };
+
 

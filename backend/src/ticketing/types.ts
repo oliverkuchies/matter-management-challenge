@@ -13,7 +13,12 @@ export interface FieldValue {
   fieldName: string;
   fieldType: FieldType;
   value: string | number | boolean | Date | CurrencyValue | UserValue | StatusValue | null;
-  displayValue?: string;
+  displayValue: string | null;
+}
+
+export interface StatusFieldValue extends Partial<FieldValue> {
+  sequence: number;
+  statusGroupId: string;
 }
 
 export interface CurrencyValue {
@@ -23,9 +28,9 @@ export interface CurrencyValue {
 
 export interface UserValue {
   id: number;
-  email: string;
-  firstName: string;
-  lastName: string;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
   displayName: string;
 }
 
@@ -67,8 +72,8 @@ export interface Field {
   accountId: number;
   name: string;
   fieldType: FieldType;
-  description?: string;
-  metadata?: Record<string, unknown>;
+  description: string | null;
+  metadata: Record<string, unknown> | null;
   systemField: boolean;
   options?: FieldOption[];
   statusOptions?: StatusOption[];

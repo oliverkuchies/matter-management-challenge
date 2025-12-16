@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { FieldsRepo } from '../../fields/repo/fields_repo.js';
 import logger from '../../../utils/logger.js';
+import FieldsRepo from '../../fields/repo/fields_repo.js';
 
 export async function getFields(_req: Request, res: Response) {
   try {

@@ -9,9 +9,9 @@ export const handlers = [
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '25');
-    const sortBy = url.searchParams.get('sortBy') || 'created_at';
-    const sortOrder = url.searchParams.get('sortOrder') || 'desc';
-    const search = url.searchParams.get('search') || '';
+    // const sortBy = url.searchParams.get('sortBy') || 'created_at';
+    // const sortOrder = url.searchParams.get('sortOrder') || 'desc';
+    // const search = url.searchParams.get('search') || '';
 
     // For now, return mock data without applying sort/search
     // In a real implementation, you would filter and sort the data
@@ -36,7 +36,7 @@ export const handlers = [
   // PATCH /matters/:id - Update matter
   http.patch(`${API_URL}/matters/:id`, async ({ request, params }) => {
     const { id } = params;
-    const body = await request.json();
+    const body = await request.json() as Record<string, unknown>;
     
     // Return success response
     // In a real implementation, you would update the mock data

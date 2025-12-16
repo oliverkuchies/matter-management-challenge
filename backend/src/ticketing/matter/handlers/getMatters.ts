@@ -20,7 +20,7 @@ export async function getMatters(req: Request, res: Response): Promise<void> {
 
     res.json(result);
   } catch (error) {
-    logger.error('Error fetching matters', { error });
+    logger.error(`Error fetching matters: ${error instanceof Error ? error.message : error}`);
     
     if (error instanceof z.ZodError) {
       res.status(400).json({
