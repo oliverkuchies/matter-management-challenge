@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Pagination } from '../components/Pagination';
+import { Pagination } from '../components/pagination/Pagination';
 
 const meta = {
   title: 'Components/Pagination',
@@ -15,7 +15,7 @@ const meta = {
     totalPages: {
       control: { type: 'number', min: 1 },
     },
-    itemsPerPage: {
+    limit: {
       control: 'select',
       options: [10, 25, 50, 100],
     },
@@ -30,10 +30,10 @@ export const FirstPage: Story = {
   args: {
     currentPage: 1,
     totalPages: 10,
-    totalItems: 250,
-    itemsPerPage: 25,
+    total: 250,
+    limit: 25,
     onPageChange: (page: number) => console.log('Page changed to:', page),
-    onItemsPerPageChange: (limit: number) => console.log('Items per page changed to:', limit),
+    onLimitChange: (limit: number) => console.log('Limit changed to:', limit),
   },
 };
 
@@ -42,10 +42,10 @@ export const MiddlePage: Story = {
   args: {
     currentPage: 5,
     totalPages: 10,
-    totalItems: 250,
-    itemsPerPage: 25,
+    total: 250,
+    limit: 25,
     onPageChange: (page: number) => console.log('Page changed to:', page),
-    onItemsPerPageChange: (limit: number) => console.log('Items per page changed to:', limit),
+    onLimitChange: (limit: number) => console.log('Limit changed to:', limit),
   },
 };
 
@@ -54,10 +54,10 @@ export const LastPage: Story = {
   args: {
     currentPage: 10,
     totalPages: 10,
-    totalItems: 250,
-    itemsPerPage: 25,
+    total: 250,
+    limit: 25,
     onPageChange: (page: number) => console.log('Page changed to:', page),
-    onItemsPerPageChange: (limit: number) => console.log('Items per page changed to:', limit),
+    onLimitChange: (limit: number) => console.log('Limit changed to:', limit),
   },
 };
 
@@ -66,10 +66,10 @@ export const SinglePage: Story = {
   args: {
     currentPage: 1,
     totalPages: 1,
-    totalItems: 15,
-    itemsPerPage: 25,
+    total: 15,
+    limit: 25,
     onPageChange: (page: number) => console.log('Page changed to:', page),
-    onItemsPerPageChange: (limit: number) => console.log('Items per page changed to:', limit),
+    onLimitChange: (limit: number) => console.log('Limit changed to:', limit),
   },
 };
 
@@ -78,10 +78,10 @@ export const ManyPages: Story = {
   args: {
     currentPage: 50,
     totalPages: 100,
-    totalItems: 2500,
-    itemsPerPage: 25,
+    total: 2500,
+    limit: 25,
     onPageChange: (page: number) => console.log('Page changed to:', page),
-    onItemsPerPageChange: (limit: number) => console.log('Items per page changed to:', limit),
+    onLimitChange: (limit: number) => console.log('Limit changed to:', limit),
   },
 };
 
@@ -90,10 +90,10 @@ export const SmallItemsPerPage: Story = {
   args: {
     currentPage: 1,
     totalPages: 100,
-    totalItems: 1000,
-    itemsPerPage: 10,
+    total: 1000,
+    limit: 10,
     onPageChange: (page: number) => console.log('Page changed to:', page),
-    onItemsPerPageChange: (limit: number) => console.log('Items per page changed to:', limit),
+    onLimitChange: (limit: number) => console.log('Limit changed to:', limit),
   },
 };
 
@@ -102,10 +102,10 @@ export const LargeItemsPerPage: Story = {
   args: {
     currentPage: 1,
     totalPages: 10,
-    totalItems: 1000,
-    itemsPerPage: 100,
+    total: 1000,
+    limit: 100,
     onPageChange: (page: number) => console.log('Page changed to:', page),
-    onItemsPerPageChange: (limit: number) => console.log('Items per page changed to:', limit),
+    onLimitChange: (limit: number) => console.log('Limit changed to:', limit),
   },
 };
 
@@ -114,9 +114,9 @@ export const Interactive: Story = {
   args: {
     currentPage: 1,
     totalPages: 20,
-    totalItems: 500,
-    itemsPerPage: 25,
+    total: 500,
+    limit: 25,
     onPageChange: (page: number) => alert(`Navigate to page: ${page}`),
-    onItemsPerPageChange: (limit: number) => alert(`Change items per page to: ${limit}`),
+    onLimitChange: (limit: number) => alert(`Change limit to: ${limit}`),
   },
 };

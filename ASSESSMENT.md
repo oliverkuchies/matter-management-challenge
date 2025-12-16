@@ -288,8 +288,8 @@ open http://localhost:3000/api/v1/matters
 # Run tests (once you've added them)
 cd backend && npm test
 
-# Development mode with hot reload
-docker compose -f docker-compose.dev.yml up
+# Development mode with hot reload (in deattached state)
+docker compose -f docker-compose.dev.yml up -d
 ```
 
 **Important Documents**:

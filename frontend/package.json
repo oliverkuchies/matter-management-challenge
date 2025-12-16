@@ -13,6 +13,8 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.12",
+    "@testing-library/react": "^16.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
@@ -21,23 +23,29 @@
     "@storybook/addon-interactions": "^8.6.14",
     "@storybook/react-vite": "^8.6.14",
     "@storybook/test": "^8.6.14",
+    "@testing-library/jest-dom": "^6.9.1",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
+    "@types/testing-library__jest-dom": "^5.14.9",
     "@typescript-eslint/eslint-plugin": "^6.14.0",
     "@typescript-eslint/parser": "^6.14.0",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",
     "eslint": "^8.55.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
+    "jsdom": "^27.3.0",
     "msw": "^2.12.4",
     "msw-storybook-addon": "^2.0.6",
     "postcss": "^8.4.32",
+    "prettier": "^3.7.4",
     "storybook": "^8.6.14",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.2.2",
     "vite": "^5.0.8",
-    "vitest": "^4.0.15"
+    "vitest": "^4.0.16"
   },
   "msw": {
     "workerDirectory": [

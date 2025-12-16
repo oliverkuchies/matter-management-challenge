@@ -1,10 +1,12 @@
-import { Matter, CurrencyValue } from '../types/matter';
+import { useStatusFieldOptions } from '../../hooks/useStatusFieldOptions';
+import { useUpdateMatterStatus } from '../../hooks/useUpdateMatterStatus';
+import { Matter, CurrencyValue } from '../../types/matter';
 import {
   formatCurrency,
   formatDate,
   formatBoolean,
-  getStatusBadgeColor,
-} from '../utils/formatting';
+} from '../../utils/formatting';
+import { StatusCell } from '../status-cell/StatusCell';
 
 interface MatterTableProps {
   matters: Matter[];
@@ -14,6 +16,17 @@ interface MatterTableProps {
 }
 
 export function MatterTable({ matters, sortBy, sortOrder, onSort }: MatterTableProps) {
+  const { statusFields } = useStatusFieldOptions();
+  const { updateStatusAsync, isUpdating } = useUpdateMatterStatus();
+
+  const handleStatusUpdate = async (matterId: string, fieldId: string, statusId: string) => {
+    await updateStatusAsync({
+      matterId,
+      fieldId,
+      statusId,
+    });
+  };
+
   const renderSortIcon = (column: string) => {
     if (sortBy !== column) {
       return (
@@ -54,13 +67,13 @@ export function MatterTable({ matters, sortBy, sortOrder, onSort }: MatterTableP
       
       case 'status':
         return (
-          <span
-            className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(
-              field.displayValue || ''
-            )}`}
-          >
-            {field.displayValue}
-          </span>
+          <StatusCell
+            matterId={matter.id}
+            currentStatus={field}
+            availableStatuses={statusFields}
+            onUpdate={handleStatusUpdate}
+            isUpdating={isUpdating}
+          />
         );
       
       case 'user':

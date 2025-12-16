@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { MatterTable } from '../components/MatterTable';
+import { MatterTable } from '../components/matter-table/MatterTable';
 import { mockMatters, createMockMatter } from '../mocks/mockData';
-import { Matter } from '../types/matter';
 
 const meta = {
   title: 'Components/MatterTable',

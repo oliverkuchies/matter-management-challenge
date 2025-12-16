@@ -1,9 +1,9 @@
-import pool from '../../../db/pool.js';
-import { Matter, MatterListParams, FieldValue, UserValue, CurrencyValue, StatusValue } from '../../types.js';
+import { Matter, MatterListParams, FieldValue, UserValue, CurrencyValue, StatusValue, FieldType } from '../../types.js';
 import logger from '../../../utils/logger.js';
 import { PoolClient } from 'pg';
+import { Repository } from '../../../repository/repository.js';
 
-export class MatterRepo {
+export class MatterRepo extends Repository {
   /**
    * Get paginated list of matters with search and sorting
    * 
@@ -30,9 +30,7 @@ export class MatterRepo {
     const { page = 1, limit = 25, sortBy = 'created_at', sortOrder = 'desc' } = params;
     const offset = (page - 1) * limit;
 
-    const client = await pool.connect();
-
-    try {
+    return await this.executeAndRelease<{ matters: Matter[]; total: number }>(async (client) => {
       // TODO: Implement search condition
       // Currently search is not implemented - add ILIKE queries with pg_trgm
       const searchCondition = '';
@@ -48,6 +46,7 @@ export class MatterRepo {
       }
 
       // Get total count
+      // TODO - Address security: Prevent SQL injection in searchCondition
       const countQuery = `
         SELECT COUNT(DISTINCT tt.id) as total
         FROM ticketing_ticket tt
@@ -55,10 +54,11 @@ export class MatterRepo {
         WHERE 1=1 ${searchCondition}
       `;
       
-      const countResult = await client.query(countQuery, queryParams);
-      const total = parseInt(countResult.rows[0].total);
+      const countRows = await this.queryRows<{ total: string }>(client, countQuery, queryParams);
+      const total = parseInt(countRows[0].total);
 
       // Get matters
+      // TODO - Address security: Prevent SQL injection in orderByClause
       const mattersQuery = `
         SELECT DISTINCT tt.id, tt.board_id, tt.created_at, tt.updated_at
         FROM ticketing_ticket tt
@@ -69,12 +69,17 @@ export class MatterRepo {
       `;
       
       queryParams.push(limit, offset);
-      const mattersResult = await client.query(mattersQuery, queryParams);
+      const mattersRows = await this.queryRows<{
+        id: string;
+        board_id: string;
+        created_at: string;
+        updated_at: string;
+      }>(client, mattersQuery, queryParams);
 
       // Get all fields for these matters
       const matters: Matter[] = [];
 
-      for (const matterRow of mattersResult.rows) {
+      for (const matterRow of mattersRows) {
         const fields = await this.getMatterFields(client, matterRow.id);
         
         matters.push({
@@ -87,30 +92,32 @@ export class MatterRepo {
       }
 
       return { matters, total };
-    } finally {
-      client.release();
-    }
+    });
   }
 
   /**
    * Get a single matter by ID
    */
   async getMatterById(matterId: string): Promise<Matter | null> {
-    const client = await pool.connect();
-
-    try {
-      const matterResult = await client.query(
+    return this.executeAndRelease<Matter | null>(async (client) => {
+      const matterRows = await this.queryRows<{
+        id: string;
+        board_id: string;
+        created_at: string;
+        updated_at: string;
+      }>(
+        client,
         `SELECT id, board_id, created_at, updated_at
          FROM ticketing_ticket
          WHERE id = $1`,
         [matterId],
       );
 
-      if (matterResult.rows.length === 0) {
+      if (matterRows.length === 0) {
         return null;
       }
 
-      const matterRow = matterResult.rows[0];
+      const matterRow = matterRows[0];
       const fields = await this.getMatterFields(client, matterId);
 
       return {
@@ -120,16 +127,36 @@ export class MatterRepo {
         createdAt: matterRow.created_at,
         updatedAt: matterRow.updated_at,
       };
-    } finally {
-      client.release();
-    }
+    });
   }
 
   /**
    * Get all field values for a matter
    */
   private async getMatterFields(client: PoolClient, ticketId: string): Promise<Record<string, FieldValue>> {
-    const fieldsResult = await client.query(
+    const fieldsRows = await this.queryRows<{
+      id: string;
+      ticket_field_id: string;
+      field_name: string;
+      field_type: FieldType;
+      text_value: string | null;
+      string_value: string | null;
+      number_value: string | null;
+      date_value: Date | null;
+      boolean_value: boolean | null;
+      currency_value: CurrencyValue | null;
+      user_value: number | null;
+      select_reference_value_uuid: string | null;
+      status_reference_value_uuid: string | null;
+      user_id: number | null;
+      user_email: string | null;
+      user_first_name: string | null;
+      user_last_name: string | null;
+      select_option_label: string | null;
+      status_option_label: string | null;
+      status_group_name: string | null;
+    }>(
+      client,
       `SELECT 
         ttfv.id,
         ttfv.ticket_field_id,
@@ -166,9 +193,9 @@ export class MatterRepo {
 
     const fields: Record<string, FieldValue> = {};
 
-    for (const row of fieldsResult.rows) {
+    for (const row of fieldsRows) {
       let value: string | number | boolean | Date | CurrencyValue | UserValue | StatusValue | null = null;
-      let displayValue: string | undefined = undefined;
+      let displayValue: string | null = null;
 
       switch (row.field_type) {
         case 'text':
@@ -176,20 +203,20 @@ export class MatterRepo {
           break;
         case 'number':
           value = row.number_value ? parseFloat(row.number_value) : null;
-          displayValue = value !== null ? value.toLocaleString() : undefined;
+          displayValue = value !== null ? value.toLocaleString() : null;
           break;
         case 'date':
           value = row.date_value;
-          displayValue = row.date_value ? new Date(row.date_value).toLocaleDateString() : undefined;
+          displayValue = row.date_value ? new Date(row.date_value).toLocaleDateString() : null;
           break;
         case 'boolean':
           value = row.boolean_value;
           displayValue = value ? '✓' : '✗';
           break;
         case 'currency':
-          value = row.currency_value as CurrencyValue;
+          value = row.currency_value;
           if (row.currency_value) {
-            displayValue = `${(row.currency_value as CurrencyValue).amount.toLocaleString()} ${(row.currency_value as CurrencyValue).currency}`;
+            displayValue = `${row.currency_value.amount.toLocaleString()} ${(row.currency_value as CurrencyValue).currency}`;
           }
           break;
         case 'user':
@@ -199,7 +226,7 @@ export class MatterRepo {
               email: row.user_email,
               firstName: row.user_first_name,
               lastName: row.user_last_name,
-              displayName: `${row.user_first_name} ${row.user_last_name}`,
+              displayName: `${row.user_first_name} ${row.user_last_name}`.trim(),
             };
             value = userValue;
             displayValue = userValue.displayName;
@@ -244,10 +271,7 @@ export class MatterRepo {
     value: string | number | boolean | Date | CurrencyValue | UserValue | StatusValue | null,
     userId: number,
   ): Promise<void> {
-    const client = await pool.connect();
-
-    try {
-      await client.query('BEGIN');
+    await this.executeTransaction<void>(async (client) => {
 
       // Determine which column to update based on field type
       let columnName: string;
@@ -287,15 +311,16 @@ export class MatterRepo {
           columnValue = value as string;
           
           // Track status change in cycle time history
-          const currentStatusResult = await client.query(
+          const currentStatusRows = await this.queryRows<{ status_reference_value_uuid: string }>(
+            client,
             `SELECT status_reference_value_uuid 
              FROM ticketing_ticket_field_value 
              WHERE ticket_id = $1 AND ticket_field_id = $2`,
             [matterId, fieldId],
           );
           
-          if (currentStatusResult.rows.length > 0) {
-            const fromStatusId = currentStatusResult.rows[0].status_reference_value_uuid;
+          if (currentStatusRows.length > 0) {
+            const fromStatusId = currentStatusRows[0].status_reference_value_uuid;
             
             await client.query(
               `INSERT INTO ticketing_cycle_time_histories 
@@ -325,15 +350,9 @@ export class MatterRepo {
         `UPDATE ticketing_ticket SET updated_at = NOW() WHERE id = $1`,
         [matterId],
       );
-
-      await client.query('COMMIT');
-    } catch (error) {
-      await client.query('ROLLBACK');
-      logger.error('Error updating matter field', { error, matterId, fieldId });
-      throw error;
-    } finally {
-      client.release();
-    }
+    }, (error) => {
+      logger.error('Failed to update matter field' + JSON.stringify({ error, matterId, fieldId }));
+    });
   }
 }
 

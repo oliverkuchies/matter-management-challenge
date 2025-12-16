@@ -8,6 +8,11 @@ export interface Matter {
   updatedAt: string;
 }
 
+export interface StatusFieldValue extends Partial<FieldValue> {
+  sequence: number;
+  statusGroupId: string;
+}
+
 export interface CurrencyValue {
   amount: number;
   currency: string;
@@ -24,13 +29,16 @@ export interface UserValue {
 export interface StatusValue {
   statusId: string;
   groupName: string;
+  label: string;
 }
+
+export type FieldValues = string | number | boolean | Date | CurrencyValue | UserValue | StatusValue | null;
 
 export interface FieldValue {
   fieldId: string;
   fieldName: string;
   fieldType: FieldType;
-  value: string | number | boolean | Date | CurrencyValue | UserValue | StatusValue | null;
+  value: FieldValues;
   displayValue?: string;
 }
 

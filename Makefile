@@ -13,7 +13,7 @@ down: ## Stop all services
 	docker compose down
 
 dev: ## Start development environment with hot reload
-	docker compose -f docker-compose.dev.yml up
+	docker compose -f docker-compose.dev.yml up -d
 
 logs: ## Tail logs from all services
 	docker compose logs -f
