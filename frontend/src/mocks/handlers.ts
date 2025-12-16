@@ -36,8 +36,8 @@ export const handlers = [
   // PATCH /matters/:id - Update matter
   http.patch(`${API_URL}/matters/:id`, async ({ request, params }) => {
     const { id } = params;
-    const body = await request.json() as Record<string, unknown>;
-    
+    const body = (await request.json()) as Record<string, unknown>;
+
     // Return success response
     // In a real implementation, you would update the mock data
     return HttpResponse.json({ success: true, id, ...body });

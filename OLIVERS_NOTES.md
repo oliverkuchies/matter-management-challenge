@@ -10,6 +10,7 @@ My Notes
     - After making this one change, many type errors appeared which indicates that typing was not performed properly (we ripped a bandaid off.) :smile:
 - Removed typecasting, which is another code smell (as it hides root issues with Typescript used incorrectly)
 - Added React Query for easier updating & retrieval of content. This means that state is managed more on the backend than the frontend, allowing for fresh data when a user sees the page. For instance, if two legal team members are updating the page at once, it would be helpful for latest data to be presented to the other user. Tanstack allows for this using refetching
+- Updated lint rules (including prettier.)
 
 AI Usage
 - Used AI to create Storybook components for Matter table and Pagination. This will be easier for me to test transitions without mutating the sample data.

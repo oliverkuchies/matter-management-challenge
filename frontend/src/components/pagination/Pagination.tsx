@@ -47,7 +47,7 @@ export function Pagination({
           >
             Previous
           </button>
-          
+
           {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
             let pageNum;
             if (totalPages <= 5) {
@@ -87,4 +87,3 @@ export function Pagination({
     </div>
   );
 }
-

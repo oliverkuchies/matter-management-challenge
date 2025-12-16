@@ -25,7 +25,7 @@ interface MatterManagementContextType {
 }
 
 export const MatterManagementContext = createContext<MatterManagementContextType | undefined>(
-  undefined
+  undefined,
 );
 
 export function MatterManagementProvider({ children }: { children: ReactNode }) {

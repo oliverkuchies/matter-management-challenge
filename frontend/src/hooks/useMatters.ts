@@ -21,7 +21,7 @@ async function fetchMatters(params: UseMatterParams): Promise<MatterListResponse
   });
 
   const response = await fetch(`${API_URL}/matters?${queryParams}`);
-  
+
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }

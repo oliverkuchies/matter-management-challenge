@@ -1,11 +1,7 @@
 import { useStatusFieldOptions } from '../../hooks/useStatusFieldOptions';
 import { useUpdateMatterStatus } from '../../hooks/useUpdateMatterStatus';
 import { Matter, CurrencyValue } from '../../types/matter';
-import {
-  formatCurrency,
-  formatDate,
-  formatBoolean,
-} from '../../utils/formatting';
+import { formatCurrency, formatDate, formatBoolean } from '../../utils/formatting';
 import { StatusCell } from '../status-cell/StatusCell';
 
 interface MatterTableProps {
@@ -30,12 +26,22 @@ export function MatterTable({ matters, sortBy, sortOrder, onSort }: MatterTableP
   const renderSortIcon = (column: string) => {
     if (sortBy !== column) {
       return (
-        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+        <svg
+          className="w-4 h-4 text-gray-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+          />
         </svg>
       );
     }
-    
+
     return sortOrder === 'asc' ? (
       <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -53,18 +59,20 @@ export function MatterTable({ matters, sortBy, sortOrder, onSort }: MatterTableP
 
     switch (field.fieldType) {
       case 'currency':
-        return <span className="font-medium">{formatCurrency(field.value as CurrencyValue | null)}</span>;
-      
+        return (
+          <span className="font-medium">{formatCurrency(field.value as CurrencyValue | null)}</span>
+        );
+
       case 'date':
         return <span>{formatDate(field.value as string | null)}</span>;
-      
+
       case 'boolean':
         return (
           <span className={field.value ? 'text-green-600' : 'text-gray-400'}>
             {formatBoolean(field.value as boolean | null)}
           </span>
         );
-      
+
       case 'status':
         return (
           <StatusCell
@@ -75,10 +83,10 @@ export function MatterTable({ matters, sortBy, sortOrder, onSort }: MatterTableP
             isUpdating={isUpdating}
           />
         );
-      
+
       case 'user':
         return <span>{field.displayValue}</span>;
-      
+
       default:
         return <span>{field.displayValue || String(field.value) || 'N/A'}</span>;
     }
@@ -162,9 +170,7 @@ export function MatterTable({ matters, sortBy, sortOrder, onSort }: MatterTableP
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {renderFieldValue(matter, 'Case Number')}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                {renderFieldValue(matter, 'Status')}
-              </td>
+              <td className="px-6 py-4 whitespace-nowrap">{renderFieldValue(matter, 'Status')}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {renderFieldValue(matter, 'Assigned To')}
               </td>
@@ -197,4 +203,3 @@ export function MatterTable({ matters, sortBy, sortOrder, onSort }: MatterTableP
     </div>
   );
 }
-

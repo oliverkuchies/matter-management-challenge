@@ -76,7 +76,7 @@ export const AllSLAStatuses: Story = {
         id: 'sla-in-progress',
         fields: {
           ...createMockMatter().fields,
-          'subject': {
+          subject: {
             fieldId: 'field-1',
             fieldName: 'subject',
             fieldType: 'text',
@@ -97,7 +97,7 @@ export const AllSLAStatuses: Story = {
         id: 'sla-met',
         fields: {
           ...createMockMatter().fields,
-          'subject': {
+          subject: {
             fieldId: 'field-1',
             fieldName: 'subject',
             fieldType: 'text',
@@ -118,7 +118,7 @@ export const AllSLAStatuses: Story = {
         id: 'sla-breached',
         fields: {
           ...createMockMatter().fields,
-          'subject': {
+          subject: {
             fieldId: 'field-1',
             fieldName: 'subject',
             fieldType: 'text',
@@ -146,9 +146,7 @@ export const AllSLAStatuses: Story = {
 export const HighPriorityUrgent: Story = {
   args: {
     matters: mockMatters.filter(
-      (m) =>
-        m.fields['Priority']?.displayValue === 'High' &&
-        m.fields['Urgent']?.value === true
+      (m) => m.fields['Priority']?.displayValue === 'High' && m.fields['Urgent']?.value === true,
     ),
     sortBy: 'created_at',
     sortOrder: 'desc',

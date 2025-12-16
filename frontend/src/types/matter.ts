@@ -32,7 +32,15 @@ export interface StatusValue {
   label: string;
 }
 
-export type FieldValues = string | number | boolean | Date | CurrencyValue | UserValue | StatusValue | null;
+export type FieldValues =
+  | string
+  | number
+  | boolean
+  | Date
+  | CurrencyValue
+  | UserValue
+  | StatusValue
+  | null;
 
 export interface FieldValue {
   fieldId: string;
@@ -42,7 +50,15 @@ export interface FieldValue {
   displayValue?: string;
 }
 
-export type FieldType = 'text' | 'number' | 'select' | 'date' | 'currency' | 'boolean' | 'status' | 'user';
+export type FieldType =
+  | 'text'
+  | 'number'
+  | 'select'
+  | 'date'
+  | 'currency'
+  | 'boolean'
+  | 'status'
+  | 'user';
 
 export interface CycleTime {
   resolutionTimeMs: number | null;
@@ -86,4 +102,3 @@ export interface StatusOption {
   groupName: string;
   sequence: number;
 }
-
