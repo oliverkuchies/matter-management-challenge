@@ -66,12 +66,12 @@ export const mockStatuses = {
 // Helper function to create a mock matter
 export function createMockMatter(overrides: Partial<Matter> = {}): Matter {
   const baseId = Math.random().toString(36).substring(7);
-  
+
   return {
     id: `matter-${baseId}`,
     boardId: 'board-123',
     fields: {
-      'subject': {
+      subject: {
         fieldId: 'field-1',
         fieldName: 'subject',
         fieldType: 'text',
@@ -85,7 +85,7 @@ export function createMockMatter(overrides: Partial<Matter> = {}): Matter {
         value: 1000,
         displayValue: '1,000',
       },
-      'Status': {
+      Status: {
         fieldId: 'field-3',
         fieldName: 'Status',
         fieldType: 'status',
@@ -99,7 +99,7 @@ export function createMockMatter(overrides: Partial<Matter> = {}): Matter {
         value: mockUsers.alice,
         displayValue: 'Alice Brown',
       },
-      'Priority': {
+      Priority: {
         fieldId: 'field-5',
         fieldName: 'Priority',
         fieldType: 'select',
@@ -120,7 +120,7 @@ export function createMockMatter(overrides: Partial<Matter> = {}): Matter {
         value: '2025-12-31T00:00:00.000Z',
         displayValue: '12/31/2025',
       },
-      'Urgent': {
+      Urgent: {
         fieldId: 'field-8',
         fieldName: 'Urgent',
         fieldType: 'boolean',
@@ -147,7 +147,7 @@ export const mockMatters: Matter[] = [
   createMockMatter({
     id: 'matter-1',
     fields: {
-      'subject': {
+      subject: {
         fieldId: 'field-1',
         fieldName: 'subject',
         fieldType: 'text',
@@ -161,7 +161,7 @@ export const mockMatters: Matter[] = [
         value: 1001,
         displayValue: '1,001',
       },
-      'Status': {
+      Status: {
         fieldId: 'field-3',
         fieldName: 'Status',
         fieldType: 'status',
@@ -175,7 +175,7 @@ export const mockMatters: Matter[] = [
         value: mockUsers.alice,
         displayValue: 'Alice Brown',
       },
-      'Priority': {
+      Priority: {
         fieldId: 'field-5',
         fieldName: 'Priority',
         fieldType: 'select',
@@ -196,7 +196,7 @@ export const mockMatters: Matter[] = [
         value: '2025-12-20T00:00:00.000Z',
         displayValue: '12/20/2025',
       },
-      'Urgent': {
+      Urgent: {
         fieldId: 'field-8',
         fieldName: 'Urgent',
         fieldType: 'boolean',
@@ -216,7 +216,7 @@ export const mockMatters: Matter[] = [
   createMockMatter({
     id: 'matter-2',
     fields: {
-      'subject': {
+      subject: {
         fieldId: 'field-1',
         fieldName: 'subject',
         fieldType: 'text',
@@ -230,7 +230,7 @@ export const mockMatters: Matter[] = [
         value: 1002,
         displayValue: '1,002',
       },
-      'Status': {
+      Status: {
         fieldId: 'field-3',
         fieldName: 'Status',
         fieldType: 'status',
@@ -244,7 +244,7 @@ export const mockMatters: Matter[] = [
         value: mockUsers.bob,
         displayValue: 'Bob Johnson',
       },
-      'Priority': {
+      Priority: {
         fieldId: 'field-5',
         fieldName: 'Priority',
         fieldType: 'select',
@@ -265,7 +265,7 @@ export const mockMatters: Matter[] = [
         value: '2026-01-15T00:00:00.000Z',
         displayValue: '1/15/2026',
       },
-      'Urgent': {
+      Urgent: {
         fieldId: 'field-8',
         fieldName: 'Urgent',
         fieldType: 'boolean',
@@ -285,7 +285,7 @@ export const mockMatters: Matter[] = [
   createMockMatter({
     id: 'matter-3',
     fields: {
-      'subject': {
+      subject: {
         fieldId: 'field-1',
         fieldName: 'subject',
         fieldType: 'text',
@@ -299,7 +299,7 @@ export const mockMatters: Matter[] = [
         value: 1003,
         displayValue: '1,003',
       },
-      'Status': {
+      Status: {
         fieldId: 'field-3',
         fieldName: 'Status',
         fieldType: 'status',
@@ -313,7 +313,7 @@ export const mockMatters: Matter[] = [
         value: mockUsers.jane,
         displayValue: 'Jane Smith',
       },
-      'Priority': {
+      Priority: {
         fieldId: 'field-5',
         fieldName: 'Priority',
         fieldType: 'select',
@@ -334,7 +334,7 @@ export const mockMatters: Matter[] = [
         value: '2026-02-28T00:00:00.000Z',
         displayValue: '2/28/2026',
       },
-      'Urgent': {
+      Urgent: {
         fieldId: 'field-8',
         fieldName: 'Urgent',
         fieldType: 'boolean',
@@ -354,7 +354,7 @@ export const mockMatters: Matter[] = [
   createMockMatter({
     id: 'matter-4',
     fields: {
-      'subject': {
+      subject: {
         fieldId: 'field-1',
         fieldName: 'subject',
         fieldType: 'text',
@@ -368,7 +368,7 @@ export const mockMatters: Matter[] = [
         value: 1004,
         displayValue: '1,004',
       },
-      'Status': {
+      Status: {
         fieldId: 'field-3',
         fieldName: 'Status',
         fieldType: 'status',
@@ -382,7 +382,7 @@ export const mockMatters: Matter[] = [
         value: mockUsers.carol,
         displayValue: 'Carol White',
       },
-      'Priority': {
+      Priority: {
         fieldId: 'field-5',
         fieldName: 'Priority',
         fieldType: 'select',
@@ -403,7 +403,7 @@ export const mockMatters: Matter[] = [
         value: '2025-12-25T00:00:00.000Z',
         displayValue: '12/25/2025',
       },
-      'Urgent': {
+      Urgent: {
         fieldId: 'field-8',
         fieldName: 'Urgent',
         fieldType: 'boolean',
@@ -423,7 +423,7 @@ export const mockMatters: Matter[] = [
   createMockMatter({
     id: 'matter-5',
     fields: {
-      'subject': {
+      subject: {
         fieldId: 'field-1',
         fieldName: 'subject',
         fieldType: 'text',
@@ -437,7 +437,7 @@ export const mockMatters: Matter[] = [
         value: 1005,
         displayValue: '1,005',
       },
-      'Status': {
+      Status: {
         fieldId: 'field-3',
         fieldName: 'Status',
         fieldType: 'status',
@@ -451,7 +451,7 @@ export const mockMatters: Matter[] = [
         value: mockUsers.david,
         displayValue: 'David Lee',
       },
-      'Priority': {
+      Priority: {
         fieldId: 'field-5',
         fieldName: 'Priority',
         fieldType: 'select',
@@ -472,7 +472,7 @@ export const mockMatters: Matter[] = [
         value: '2025-11-30T00:00:00.000Z',
         displayValue: '11/30/2025',
       },
-      'Urgent': {
+      Urgent: {
         fieldId: 'field-8',
         fieldName: 'Urgent',
         fieldType: 'boolean',
@@ -495,7 +495,7 @@ export const mockMatters: Matter[] = [
 export function createMockMatterListResponse(
   page: number = 1,
   limit: number = 25,
-  total?: number
+  total?: number,
 ): MatterListResponse {
   const actualTotal = total ?? mockMatters.length;
   const startIndex = (page - 1) * limit;

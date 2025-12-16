@@ -15,8 +15,8 @@ async function updateMatterStatus({ matterId, fieldId, statusId }: UpdateStatusP
     body: JSON.stringify({
       fieldId,
       fieldType: 'status',
-      value: statusId
-    })
+      value: statusId,
+    }),
   });
 
   if (!response.ok) {

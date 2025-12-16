@@ -2,16 +2,16 @@ import { SLAStatus, CurrencyValue } from '../types/matter';
 
 export function formatCurrency(value: CurrencyValue | null): string {
   if (!value || typeof value !== 'object') return 'N/A';
-  
+
   const { amount, currency } = value;
   if (amount === null || amount === undefined) return 'N/A';
-  
+
   return `${amount.toLocaleString()} ${currency}`;
 }
 
 export function formatDate(dateString: string | null): string {
   if (!dateString) return 'N/A';
-  
+
   try {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -41,4 +41,3 @@ export function getSLABadgeColor(sla: SLAStatus): string {
       return 'bg-gray-100 text-gray-800';
   }
 }
-

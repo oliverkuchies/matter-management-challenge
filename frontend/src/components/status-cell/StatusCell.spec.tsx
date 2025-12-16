@@ -22,7 +22,7 @@ describe('StatusCell', () => {
         currentStatus={{ ...mockCurrentStatus, displayValue: 'In Progress' }}
         availableStatuses={mockAvailableStatuses}
         onUpdate={mockOnUpdate}
-      />
+      />,
     );
 
     // Open dropdown
@@ -45,7 +45,7 @@ describe('StatusCell', () => {
         currentStatus={mockCurrentStatus}
         availableStatuses={mockAvailableStatuses}
         onUpdate={mockOnUpdate}
-      />
+      />,
     );
 
     // Open dropdown
@@ -68,7 +68,7 @@ describe('StatusCell', () => {
         currentStatus={mockCurrentStatus}
         availableStatuses={mockAvailableStatuses}
         onUpdate={mockOnUpdate}
-      />
+      />,
     );
 
     // Open dropdown
@@ -91,7 +91,7 @@ describe('StatusCell', () => {
         currentStatus={mockCurrentStatus}
         availableStatuses={[]}
         onUpdate={mockOnUpdate}
-      />
+      />,
     );
 
     // Should show "No Statuses Available" message
@@ -105,7 +105,7 @@ describe('StatusCell', () => {
         currentStatus={mockCurrentStatus}
         availableStatuses={mockAvailableStatuses}
         onUpdate={mockOnUpdate}
-      />
+      />,
     );
 
     // Open dropdown
@@ -115,7 +115,7 @@ describe('StatusCell', () => {
     // Click current status - find the one in the dropdown (not the main button)
     const dropdownOptions = screen.getAllByRole('button');
     const currentOption = dropdownOptions.find(
-      (btn) => btn.textContent?.includes('To Do') && btn !== statusButton
+      (btn) => btn.textContent?.includes('To Do') && btn !== statusButton,
     );
 
     if (currentOption) {
