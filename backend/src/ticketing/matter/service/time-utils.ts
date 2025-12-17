@@ -9,6 +9,10 @@ export function calculateDifference(startDate: string, endDate: string): number 
 export function formatDuration(durationMs: number = 0, isInProgress: boolean = false): string {
     let timeString = '';
 
+    if (!isInProgress && durationMs === 0) {
+      return '-';
+    }
+
     if (isInProgress) {
       timeString += 'In Progress:';
     }

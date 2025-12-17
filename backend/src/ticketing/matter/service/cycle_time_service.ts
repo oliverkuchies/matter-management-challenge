@@ -68,7 +68,7 @@ export class CycleTimeService {
       if (!lastRow || lastRow.name !== StatusGroupEnum.DONE) {
         return {
           resolutionTimeMs: resolutionTimeMs,
-          resolutionTimeFormatted: formatDuration(resolutionTimeMs, true),
+          resolutionTimeFormatted: formatDuration(resolutionTimeMs, lastRow.name === StatusGroupEnum.IN_PROGRESS),
           isInProgress: true,
           startedAt: new Date(firstRow.changed_at),
           completedAt: null,
@@ -117,6 +117,7 @@ export class CycleTimeService {
   ): Promise<{ cycleTime: CycleTime; sla: SLAStatus }> {
     const cycleTime = await this.calculateCycleTime(ticketId);
     const sla = await this.calculateSLAStatus(cycleTime.resolutionTimeMs, cycleTime.isInProgress);
+      
     return {
       cycleTime,
       sla

@@ -155,6 +155,9 @@ CREATE INDEX idx_ticket_field_value_status_ref ON ticketing_ticket_field_value(s
 CREATE INDEX idx_cycle_time_histories_ticket_id ON ticketing_cycle_time_histories(ticket_id);
 CREATE INDEX idx_cycle_time_histories_status_field ON ticketing_cycle_time_histories(status_field_id);
 CREATE INDEX idx_cycle_time_histories_to_status ON ticketing_cycle_time_histories(to_status_id);
+CREATE INDEX idx_cycle_time_histories_from_status ON ticketing_cycle_time_histories(from_status_id);
+CREATE INDEX idx_cycle_time_histories_transitioned_at ON ticketing_cycle_time_histories(transitioned_at);
+CREATE INDEX idx_status_options_group_id ON ticketing_field_status_options(group_id);
 
 -- Indexes for text search
 CREATE INDEX idx_ticket_field_value_text_trgm ON ticketing_ticket_field_value USING gin (text_value gin_trgm_ops);
