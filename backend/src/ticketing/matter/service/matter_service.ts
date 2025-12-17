@@ -1,6 +1,6 @@
 import { MatterRepo } from '../repo/matter_repo.js';
 import { CycleTimeService } from './cycle_time_service.js';
-import { Matter, MatterListParams, MatterListResponse, StatusValue, CurrencyValue, UserValue } from '../../types.js';
+import { Matter, MatterListParams, MatterListResponse, StatusValue, CurrencyValue, UserValue } from '../../types/types.js';
 
 export class MatterService {
   private matterRepo: MatterRepo;
@@ -18,17 +18,8 @@ export class MatterService {
     // Calculate cycle time and SLA for each matter
     const enrichedMatters = await Promise.all(
       matters.map(async (matter) => {
-        // Get current status group name
-        const statusField = matter.fields['Status'];
-        let statusGroupName: string | null = null;
-        
-        if (statusField && statusField.value && typeof statusField.value === 'object') {
-          statusGroupName = (statusField.value as StatusValue).groupName || null;
-        }
-
         const { cycleTime, sla } = await this.cycleTimeService.calculateCycleTimeAndSLA(
-          matter.id,
-          statusGroupName,
+          matter.id
         );
 
         return {
@@ -50,6 +41,10 @@ export class MatterService {
     };
   }
 
+  async getStatusOptions() {
+      return this.matterRepo.getAllStatuses();
+  }   
+
   async getMatterById(matterId: string): Promise<Matter | null> {
     const matter = await this.matterRepo.getMatterById(matterId);
     
@@ -57,17 +52,8 @@ export class MatterService {
       return null;
     }
 
-    // Calculate cycle time and SLA
-    const statusField = matter.fields['Status'];
-    let statusGroupName: string | null = null;
-    
-    if (statusField && statusField.value && typeof statusField.value === 'object') {
-      statusGroupName = (statusField.value as StatusValue).groupName || null;
-    }
-
     const { cycleTime, sla } = await this.cycleTimeService.calculateCycleTimeAndSLA(
       matter.id,
-      statusGroupName,
     );
 
     return {

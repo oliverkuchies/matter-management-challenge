@@ -5,7 +5,6 @@ import { config } from './utils/config.js';
 import logger from './utils/logger.js';
 import { checkDatabaseConnection } from './db/pool.js';
 import { matterRouter } from './ticketing/matter/routes.js';
-import statusRouter from './ticketing/status/routes.js';
 
 const app = express();
 const port = config.PORT;
@@ -44,7 +43,6 @@ app.get('/health', async (_req, res) => {
 
 // API routes
 app.use('/api/v1', matterRouter);
-app.use('/api/v1', statusRouter);
 
 // Root endpoint
 app.get('/', (_req, res) => {

@@ -22,6 +22,23 @@ services:
     networks:
       - matter-network-dev
 
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    container_name: matter-management-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_dev:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - matter-network-dev
+    restart: unless-stopped
+
   # Database seed service (runs once)
   seed:
     build:
@@ -46,6 +63,7 @@ services:
     container_name: matter-management-backend-dev
     environment:
       DATABASE_URL: postgres://matter:matter@postgres:5432/matter_db
+      REDIS_URL: redis://redis:6379
       PORT: 3000
       NODE_ENV: development
       SLA_THRESHOLD_HOURS: 8
@@ -57,6 +75,8 @@ services:
     command: npm run dev
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       seed:
         condition: service_completed_successfully
@@ -85,6 +105,8 @@ services:
 
 volumes:
   postgres_data_dev:
+    driver: local
+  redis_data_dev:
     driver: local
 
 networks:

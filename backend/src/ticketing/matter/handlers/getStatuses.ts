@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
 import logger from '../../../utils/logger.js';
-import { StatusService } from '../service/status_service.js';
+import { MatterService } from '../service/matter_service.js';
 
 export async function getStatuses(_req: Request, res: Response) {
   try {
-    const statusService = new StatusService();
-    const statuses = await statusService.getStatusOptions();
+    const matterService = new MatterService();
+    const statuses = await matterService.getStatusOptions();
     res.json(statuses);
   } catch (error) {
     logger.error('Error fetching statuses', { error });

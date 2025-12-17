@@ -9,6 +9,8 @@ const configSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   SLA_THRESHOLD_HOURS: z.string().transform(Number).default('8'),
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
+  REDIS_HOST: z.string().default('localhost'),
+  REDIS_PORT: z.string().transform(Number).default('6379'),
 });
 
 const parsedConfig = configSchema.safeParse(process.env);
