@@ -11,6 +11,19 @@ interface MatterTableProps {
   onSort: (column: string) => void;
 }
 
+export function getStatusBadgeColor(status: string): string {
+  switch (status) {
+    case 'In Progress':
+      return 'bg-blue-100 text-blue-800';
+    case 'Met':
+      return 'bg-green-100 text-green-800';
+    case 'Breached':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+}
+
 export function MatterTable({ matters, sortBy, sortOrder, onSort }: MatterTableProps) {
   const { statusFields } = useStatusFieldOptions();
   const { updateStatusAsync, isUpdating } = useUpdateMatterStatus();
@@ -84,6 +97,9 @@ export function MatterTable({ matters, sortBy, sortOrder, onSort }: MatterTableP
           />
         );
 
+      case 'resolution-time':
+        return <span>{matter.cycleTime?.resolutionTimeFormatted || 'N/A'}</span>;
+
       case 'user':
         return <span>{field.displayValue}</span>;
 
@@ -146,16 +162,14 @@ export function MatterTable({ matters, sortBy, sortOrder, onSort }: MatterTableP
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Due Date
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">
               Urgent
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Resolution Time
-              <span className="text-xs text-orange-600 ml-2">(TODO)</span>
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               SLA
-              <span className="text-xs text-orange-600 ml-2">(TODO)</span>
             </th>
           </tr>
         </thead>
@@ -186,14 +200,16 @@ export function MatterTable({ matters, sortBy, sortOrder, onSort }: MatterTableP
               <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                 {renderFieldValue(matter, 'Urgent')}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                {/* TODO: Display formatted resolution time (e.g., "2h 30m", "3d 5h") */}
-                <span className="italic">Not implemented</span>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span className="text-sm text-gray-600">
+                  {matter.cycleTime?.resolutionTimeFormatted}
+                </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                {/* TODO: Display SLA badge (In Progress/Met/Breached) with appropriate colors */}
-                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-500 italic">
-                  Not implemented
+                <span
+                  className={`px-3 py-1 text-xs font-medium rounded-full border transition-all duration-200 ${getStatusBadgeColor(matter.sla)}`}
+                >
+                  {matter.sla}
                 </span>
               </td>
             </tr>

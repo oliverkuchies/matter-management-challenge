@@ -17,7 +17,7 @@ export class MatterRepo extends Repository {
          FROM ticketing_cycle_time_histories th 
          LEFT JOIN ticketing_field_status_options tfso_from ON th.from_status_id = tfso_from.id
          LEFT JOIN ticketing_field_status_options tfso_to ON th.to_status_id = tfso_to.id
-          LEFT JOIN ticketing_field_status_groups tfsg_from ON tfso_from.group_id = tfsg_from.id
+         LEFT JOIN ticketing_field_status_groups tfsg_from ON tfso_from.group_id = tfsg_from.id
          LEFT JOIN ticketing_field_status_groups tfsg_to ON tfso_to.group_id = tfsg_to.id
          WHERE ticket_id = $1 
          ORDER BY transitioned_at ASC`,

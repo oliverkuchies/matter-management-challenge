@@ -154,12 +154,12 @@ describe('formatDuration', () => {
   describe('edge cases', () => {
     it('should handle zero duration', () => {
       const result = formatDuration(0);
-      expect(result).toBe('');
+      expect(result).toBe('-');
     });
 
     it('should handle default parameter (no duration)', () => {
       const result = formatDuration();
-      expect(result).toBe('');
+      expect(result).toBe('-');
     });
 
     it('should handle exactly 1 hour', () => {

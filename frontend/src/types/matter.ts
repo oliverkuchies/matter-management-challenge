@@ -3,7 +3,7 @@ export interface Matter {
   boardId: string;
   fields: Record<string, FieldValue>;
   cycleTime?: CycleTime;
-  sla?: SLAStatus;
+  sla: SLAStatus;
   createdAt: string;
   updatedAt: string;
 }
@@ -58,7 +58,8 @@ export type FieldType =
   | 'currency'
   | 'boolean'
   | 'status'
-  | 'user';
+  | 'user'
+  | 'resolution-time';
 
 export interface CycleTime {
   resolutionTimeMs: number | null;
