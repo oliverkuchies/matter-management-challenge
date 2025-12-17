@@ -1,6 +1,10 @@
 import pool from '../db/pool.js';
 import { PoolClient } from 'pg';
 
+export interface WrappedPoolClient extends PoolClient {
+  isWrappedInRelease: boolean;
+}
+
 /** Added by Oliver Kucharzewski for cleanliness & connection management
  * According to SOLID principles, we should not depend on concrete implementations.
  * Thus, this base Repository class abstracts the database connection logic.
@@ -9,17 +13,20 @@ import { PoolClient } from 'pg';
 export class Repository {
   /**
    * Get a database client from the pool
+   * Wraps the client to track if it's managed properly
    * @returns
    */
-  protected async getClient() : Promise<PoolClient> {
-    return await pool.connect();
+  protected async getClient() : Promise<WrappedPoolClient> {
+    const client = await pool.connect() as WrappedPoolClient;
+    client.isWrappedInRelease = false;
+    return client;
   }
 
   /**
    * Release the database client back to the pool
    * @param client 
    */
-  private releaseClient(client: PoolClient): void {
+  private releaseClient(client: WrappedPoolClient): void {
     client.release();
   }
 
@@ -30,8 +37,9 @@ export class Repository {
    * @param onError 
    * @returns
    */
-  protected async executeTransaction<T>(operation: (client: PoolClient) => Promise<T>, onError?: (error: unknown) => void): Promise<T> {
+  protected async executeTransaction<T>(operation: (client: WrappedPoolClient) => Promise<T>, onError?: (error: unknown) => void): Promise<T> {
     const client = await this.getClient();
+    client.isWrappedInRelease = true;
     try {
       await client.query('BEGIN');
       const result = await operation(client);
@@ -55,8 +63,9 @@ export class Repository {
    * @param operation 
    * @returns
    */
-  protected async executeAndRelease<T>(operation: (client: PoolClient) => Promise<T>): Promise<T> {
+  protected async executeAndRelease<T>(operation: (client: WrappedPoolClient) => Promise<T>): Promise<T> {
     const client = await this.getClient();
+    client.isWrappedInRelease = true;
     try {
       return await operation(client);
     } finally {
@@ -72,8 +81,12 @@ export class Repository {
    * @param params 
    * @returns 
    */
-  protected async queryRows<T>(client: PoolClient, queryText: string, params: unknown[] = []): Promise<T[]> {
-      const result = await client.query(queryText, params);
-      return result.rows as T[];
+  protected async queryRows<T>(client: WrappedPoolClient, queryText: string, params: unknown[] = []): Promise<T[]> {
+    if (!client.isWrappedInRelease) {
+      throw new Error('queryRows should be called within executeAndRelease or executeTransaction to ensure proper client management.');
+    }
+    
+    const result = await client.query(queryText, params);
+    return result.rows as T[];
   }
 }

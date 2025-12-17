@@ -1,5 +1,5 @@
 import { Repository } from '../../../repository/repository.js';
-import { Field, StatusGroup } from '../../types.js';
+import { Field, StatusGroup } from '../../types/types.js';
 import { CurrencyOptionRow, FieldOptionRow, FieldRow, StatusGroupRow, StatusOptionRow } from './types/field_types.js';
 
 export class FieldsRepo extends Repository {

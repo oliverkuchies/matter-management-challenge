@@ -1,3 +1,4 @@
+import { FieldType } from "../../../types/types.js";
 
 export interface FieldRow {
   id: string;
