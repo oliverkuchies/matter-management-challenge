@@ -1,19 +1,25 @@
-export function calculateDifference(startDate: string, endDate: string): number {
-    const startTime = new Date(startDate).getTime();
-    // Fallback to current time if endDate is not provided
-    const endTime = endDate ? new Date(endDate).getTime() : new Date().getTime();
+import { StatusGroupEnum } from "./cycle_time_service.js";
 
-    return endTime - startTime;
-}
+/**
+ * 
+ * Conditionally format duration based on status group
+ * Conditions:
+ * - For 'To Do' with 0 duration and 'In Progress' with 0 duration, return '-'
+ * - For 'Done' with 0 duration, return ''
+ * - For other durations, format as 'Xd Yh Zm' (days, hours, minutes)
+ * @param durationMs - The duration in milliseconds
+ * @param statusGroup - The status group (e.g., 'To Do', 'In Progress', 'Done')
+ * @returns Formatted duration string
+ */
 
-export function formatDuration(durationMs: number = 0, isInProgress: boolean = false): string {
+export function formatDuration(durationMs: number = 0, statusGroup: string): string {
     let timeString = '';
 
-    if (!isInProgress && durationMs === 0) {
-      return '-';
+    if (statusGroup === StatusGroupEnum.TO_DO && durationMs === 0 || statusGroup === StatusGroupEnum.IN_PROGRESS && durationMs === 0) {
+        return '-';
     }
 
-    if (isInProgress) {
+    if (statusGroup === StatusGroupEnum.TO_DO || statusGroup === StatusGroupEnum.IN_PROGRESS && durationMs > 0) {
       timeString += 'In Progress:';
     }
 

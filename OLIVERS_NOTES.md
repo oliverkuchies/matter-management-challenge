@@ -25,6 +25,8 @@ Where I did use AI:
 - Utilised for refactoring. I created the repository base methods, but refactored the existing repos to use them.
 - Refactoring inline objects as interfaces.
 - Created core scaffolding for tests, but tweaked them myself to prevent dodgy llm patterns (and also add more cases.)
+- Optimising existing queries
+  - When building the multi join query to determine the diff between JOINS i realised that ADVANCED sql could be used to retrieve a diff value. I utilise LLMs to develop this, and validated the logic. As a result, it resulted in 66% reduction in time taken due to less joins.
 
 TODO
 Setup caching.
@@ -68,3 +70,8 @@ Based on the above, I noticed:
 3) transitioned_at is also missing an index. It is being used for sorting.
 
 After applying those changes, the query speed was improved by 12%.
+
+## Assumptions
+
+-> When a ticket has progressed, but then moved back to todo -> it is still prefixed with In Progress:
+-> When a ticket has not progressed, and has no time associated with it, it returns '-'

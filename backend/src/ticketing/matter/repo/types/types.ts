@@ -50,4 +50,5 @@ export interface TicketingTimeEntryRow {
   status_to: string; 
   changed_at: string;
   name: string;
+  total_duration_ms: number;
 }

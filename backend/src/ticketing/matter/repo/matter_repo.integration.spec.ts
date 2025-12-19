@@ -76,29 +76,6 @@ describe('matterRepo Integration Tests', () => {
   });
 
   describe('getTicketingCycleTimeHistory', () => {
-    it('should retrieve cycle time history for a matter', async () => {
-      // First, get a matter ID from the database
-      const client = await pool.connect();
-      try {
-        const matterResult = await client.query(
-          'SELECT id FROM ticketing_ticket LIMIT 1'
-        );
-        
-        if (matterResult.rows.length === 0) {
-          // Skip test if no matters exist
-          return;
-        }
-
-        const matterId = matterResult.rows[0].id;
-        const history = await matterRepo.getTicketingCycleTimeHistory(matterId);
-
-        // History should be an array (may be empty if no status changes)
-        expect(Array.isArray(history)).toBe(true);
-      } finally {
-        client.release();
-      }
-    });
-
     it('should return history entries with correct structure', async () => {
       // Get a matter that has cycle time history
       const client = await pool.connect();
@@ -115,15 +92,12 @@ describe('matterRepo Integration Tests', () => {
         }
 
         const matterId = historyResult.rows[0].ticket_id;
-        const history = await matterRepo.getTicketingCycleTimeHistory(matterId);
+        const history = await matterRepo.getTransitionInfo(matterId);
 
-        expect(history.length).toBeGreaterThan(0);
-        
-        const firstEntry = history[0];
-        expect(firstEntry).toHaveProperty('id');
-        expect(firstEntry).toHaveProperty('status_from');
-        expect(firstEntry).toHaveProperty('status_to');
-        expect(firstEntry).toHaveProperty('changed_at');
+        expect(history).toEqual({
+          totalDurationMs: expect.any(Number),
+          transitions: expect.any(Array),
+        })
       } finally {
         client.release();
       }
@@ -147,12 +121,12 @@ describe('matterRepo Integration Tests', () => {
         }
 
         const matterId = historyResult.rows[0].ticket_id;
-        const history = await matterRepo.getTicketingCycleTimeHistory(matterId);
+        const history = await matterRepo.getTransitionInfo(matterId);
 
         // Verify chronological order
-        for (let i = 1; i < history.length; i++) {
-          const prevDate = new Date(history[i - 1].changed_at);
-          const currDate = new Date(history[i].changed_at);
+        for (let i = 1; i < history.transitions.length; i++) {
+          const prevDate = new Date(history.transitions[i - 1].changed_at);
+          const currDate = new Date(history.transitions[i].changed_at);
           expect(currDate.getTime()).toBeGreaterThanOrEqual(prevDate.getTime());
         }
       } finally {
@@ -178,10 +152,10 @@ describe('matterRepo Integration Tests', () => {
         }
 
         const matterId = matterResult.rows[0].id;
-        const history = await matterRepo.getTicketingCycleTimeHistory(matterId);
+        const history = await matterRepo.getTransitionInfo(matterId);
 
-        expect(Array.isArray(history)).toBe(true);
-        expect(history.length).toBe(0);
+        expect(Array.isArray(history.transitions)).toBe(true);
+        expect(history.transitions.length).toBe(0);
       } finally {
         client.release();
       }
@@ -203,14 +177,15 @@ describe('matterRepo Integration Tests', () => {
         } 
 
         const matterId = historyResult.rows[0].ticket_id;
-        const history = await matterRepo.getTicketingCycleTimeHistory(matterId);
+        const history = await matterRepo.getTransitionInfo(matterId);
         
         // Verify all entries have correct structure
-        history.forEach((entry) => {
+        history.transitions.forEach((entry) => {
           expect(entry).toHaveProperty('id');
           expect(entry).toHaveProperty('status_from');
           expect(entry).toHaveProperty('status_to');
           expect(entry).toHaveProperty('changed_at');
+          expect(entry).toHaveProperty('total_duration_ms');
         });
       } finally {
         client.release();

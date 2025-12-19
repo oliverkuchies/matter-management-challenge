@@ -46,7 +46,7 @@ describe('CycleTimeService Integration Tests', () => {
         expect(cycleTime.startedAt).toBeInstanceOf(Date);
         expect(cycleTime.completedAt).toBeNull();
         expect(cycleTime.resolutionTimeMs).toBeGreaterThanOrEqual(0);
-        expect(cycleTime.resolutionTimeFormatted).toContain('In Progress');
+        expect(cycleTime.resolutionTimeFormatted).toContain('-');
       } finally {
         client.release();
       }
@@ -301,8 +301,82 @@ describe('CycleTimeService Integration Tests', () => {
       }
     });
 
+    it('should return In Progress when last task is To Do but has multiple transitions', async () => {
+      const client = await pool.connect();
+      let testMatterId: string | null = null;
+      
+      try {
+        // Create a test matter with history ending in To Do
+        const ticketResult = await client.query(
+          `INSERT INTO ticketing_ticket (board_id) 
+           SELECT id FROM ticketing_board LIMIT 1 
+           RETURNING id`
+        );
+        testMatterId = ticketResult.rows[0].id;
+
+        const statusFieldResult = await client.query(
+          `SELECT id FROM ticketing_fields WHERE field_type = 'status' LIMIT 1`
+        );
+
+        const statusOptionsResult = await client.query(
+          `SELECT tfso.id, tfsg.name
+           FROM ticketing_field_status_options tfso
+           JOIN ticketing_field_status_groups tfsg ON tfso.group_id = tfsg.id
+           LIMIT 3`
+        );
+
+        const toDoStatus = statusOptionsResult.rows.find((s) => s.name === 'To Do');
+        const inProgressStatus = statusOptionsResult.rows.find((s) => s.name === 'In Progress');
+        const doneStatus = statusOptionsResult.rows.find((s) => s.name === 'Done');
+
+        if (!toDoStatus || !inProgressStatus || !doneStatus) {
+          return;
+        }
+
+        // Insert history: To Do -> In Progress -> Done -> To Do
+        await client.query(
+          `INSERT INTO ticketing_cycle_time_histories 
+           (ticket_id, status_field_id, from_status_id, to_status_id, transitioned_at)
+           VALUES
+           ($1, $2, NULL, $3, NOW() - INTERVAL '3 hours'),
+           ($1, $2, $3, $4, NOW() - INTERVAL '2 hours'),
+           ($1, $2, $4, $5, NOW() - INTERVAL '1 hour'),
+           ($1, $2, $5, $3, NOW())`,
+          [
+            testMatterId,
+            statusFieldResult.rows[0].id,
+            toDoStatus.id,
+            inProgressStatus.id,
+            doneStatus.id,
+          ]
+        );
+
+        const cycleTime = await cycleTimeService.calculateCycleTime(testMatterId!);
+
+        expect(cycleTime).toBeDefined();
+        expect(cycleTime.resolutionTimeMs).toBeGreaterThan(0);
+        expect(cycleTime.isInProgress).toBe(true);
+        expect(cycleTime.resolutionTimeFormatted).toContain('In Progress');
+      } finally {
+        // Cleanup - ensure records are deleted even if test fails
+        if (testMatterId) {
+          await client.query(
+            `DELETE FROM ticketing_cycle_time_histories WHERE ticket_id = $1`,
+            [testMatterId]
+          );
+          await client.query(
+            `DELETE FROM ticketing_ticket WHERE id = $1`,
+            [testMatterId]
+          );
+        }
+        client.release();
+      }
+    });
+
     it('should throw error for matter not starting with "To Do" status', async () => {
       const client = await pool.connect();
+      let testMatterId: string | null = null;
+      
       try {
         // Create a test matter with invalid history (not starting with To Do)
         const ticketResult = await client.query(
@@ -310,7 +384,7 @@ describe('CycleTimeService Integration Tests', () => {
            SELECT id FROM ticketing_board LIMIT 1 
            RETURNING id`
         );
-        const testMatterId = ticketResult.rows[0].id;
+        testMatterId = ticketResult.rows[0].id;
 
         // Get a non-"To Do" status
         const statusResult = await client.query(
@@ -339,19 +413,20 @@ describe('CycleTimeService Integration Tests', () => {
         );
 
         await expect(
-          cycleTimeService.calculateCycleTime(testMatterId)
+          cycleTimeService.calculateCycleTime(testMatterId!)
         ).rejects.toThrow(`Invalid cycle time history for ticket ${testMatterId}: missing initial 'To Do' status`);
-
-        // Cleanup
-        await client.query(
-          `DELETE FROM ticketing_cycle_time_histories WHERE ticket_id = $1`,
-          [testMatterId]
-        );
-        await client.query(
-          `DELETE FROM ticketing_ticket WHERE id = $1`,
-          [testMatterId]
-        );
       } finally {
+        // Cleanup - ensure records are deleted even if test fails
+        if (testMatterId) {
+          await client.query(
+            `DELETE FROM ticketing_cycle_time_histories WHERE ticket_id = $1`,
+            [testMatterId]
+          );
+          await client.query(
+            `DELETE FROM ticketing_ticket WHERE id = $1`,
+            [testMatterId]
+          );
+        }
         client.release();
       }
     });
@@ -372,6 +447,7 @@ describe('CycleTimeService Integration Tests', () => {
     });
 
     it('should return "In Progress" for matters with null resolution time - 0h 0m', async () => {
+      // @ts-expect-error Testing null resolution time
       const slaStatus = await cycleTimeService.calculateSLAStatus(null, false);
       expect(slaStatus).toBe('In Progress');
     });
@@ -385,6 +461,12 @@ describe('CycleTimeService Integration Tests', () => {
       const slaStatus = await cycleTimeService.calculateSLAStatus(10 * 60 * 60 * 1000, false); // 10 hours
       expect(slaStatus).toBe('Breached');
     });
+
+    it('should return "Breached" when matters > SLA threshold - 8h 1m & are also in progress', async () => {
+      const slaStatus = await cycleTimeService.calculateSLAStatus(8 * 60 * 60 * 1000 + 60000, true); // 8 hours 1 minute
+      expect(slaStatus).toBe('Breached');
+    });
+
   });
 
   /**

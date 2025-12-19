@@ -33,6 +33,7 @@ export function useMatters(params: UseMatterParams) {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['matters', params],
     queryFn: () => fetchMatters(params),
+    refetchInterval: 30000,
   });
 
   return {

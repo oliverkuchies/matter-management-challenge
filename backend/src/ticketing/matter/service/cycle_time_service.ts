@@ -29,7 +29,7 @@ import { calculateDifference, formatDuration } from './time-utils.js';
  * - Database query optimization - TODO
  */
 
-enum StatusGroupEnum {
+export enum StatusGroupEnum {
   TO_DO = 'To Do',
   IN_PROGRESS = 'In Progress',
   DONE = 'Done',
@@ -55,20 +55,14 @@ export class CycleTimeService {
    * @returns The CycleTime object containing resolution time and timestamps
    */
   async calculateCycleTime(ticketId : string): Promise<CycleTime> {
-      const cycleTimeHistories = await this.matterRepo.getTicketingCycleTimeHistory(ticketId);
-      const firstRow = cycleTimeHistories[0];
-      const lastRow = cycleTimeHistories[cycleTimeHistories.length - 1];
-
-      if (!firstRow || firstRow.name !== StatusGroupEnum.TO_DO) {
-        throw new Error(`Invalid cycle time history for ticket ${ticketId}: missing initial 'To Do' status`);
-      }
-
-      const resolutionTimeMs = await calculateDifference(firstRow.changed_at, lastRow.changed_at);
-
-      if (!lastRow || lastRow.name !== StatusGroupEnum.DONE) {
+    const transitionInfo = await this.matterRepo.getTransitionInfo(ticketId);
+    const firstRow = transitionInfo.transitions[0];
+    const lastTransition = transitionInfo.transitions[transitionInfo.transitions.length - 1];
+  
+      if (!lastTransition || lastTransition.name !== StatusGroupEnum.DONE) {
         return {
-          resolutionTimeMs: resolutionTimeMs,
-          resolutionTimeFormatted: formatDuration(resolutionTimeMs, lastRow.name === StatusGroupEnum.IN_PROGRESS),
+          resolutionTimeMs: transitionInfo.totalDurationMs,
+          resolutionTimeFormatted: formatDuration(transitionInfo.totalDurationMs, lastTransition.name),
           isInProgress: true,
           startedAt: new Date(firstRow.changed_at),
           completedAt: null,
@@ -76,11 +70,11 @@ export class CycleTimeService {
       }
           
       return {
-        resolutionTimeMs: resolutionTimeMs,
-        resolutionTimeFormatted: formatDuration(resolutionTimeMs, false),
+        resolutionTimeMs: transitionInfo.totalDurationMs,
+        resolutionTimeFormatted: formatDuration(transitionInfo.totalDurationMs, lastTransition.name),
         isInProgress: false,
         startedAt: new Date(firstRow.changed_at),
-        completedAt: new Date(lastRow.changed_at),
+        completedAt: new Date(lastTransition.changed_at),
       }
   }
 
@@ -91,18 +85,21 @@ export class CycleTimeService {
    * @returns The SLA status as 'In Progress', 'Met', or 'Breached'
    **
    */
-  async calculateSLAStatus(resolutionTimeMs: number | null, isInProgress: boolean): Promise<SLAStatus> {
-    if (isInProgress) {
+  async calculateSLAStatus(resolutionTimeMs: number = 0, isInProgress: boolean = false): Promise<SLAStatus> {
+    if (isInProgress && resolutionTimeMs <= this.slaThreshHoldMs) {
       return SLAStatusEnum.IN_PROGRESS;
     }
-
     if (resolutionTimeMs === null) {
       return SLAStatusEnum.IN_PROGRESS;
     }
 
     if (resolutionTimeMs <= this.slaThreshHoldMs) {
       return SLAStatusEnum.MET;
-    } 
+    }
+
+    if (isInProgress) {
+      return SLAStatusEnum.BREACHED;
+    }
 
     return SLAStatusEnum.BREACHED;
   }
@@ -116,7 +113,7 @@ export class CycleTimeService {
     ticketId: string
   ): Promise<{ cycleTime: CycleTime; sla: SLAStatus }> {
     const cycleTime = await this.calculateCycleTime(ticketId);
-    const sla = await this.calculateSLAStatus(cycleTime.resolutionTimeMs, cycleTime.isInProgress);
+    const sla = await this.calculateSLAStatus(cycleTime.resolutionTimeMs ?? 0, cycleTime.isInProgress);
       
     return {
       cycleTime,

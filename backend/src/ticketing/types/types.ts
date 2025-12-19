@@ -42,7 +42,7 @@ export interface StatusValue {
 export type FieldType = 'text' | 'number' | 'select' | 'date' | 'currency' | 'boolean' | 'status' | 'user';
 
 export interface CycleTime {
-  resolutionTimeMs: number | null;
+  resolutionTimeMs: number;
   resolutionTimeFormatted: string;
   isInProgress: boolean;
   startedAt: Date | null;
