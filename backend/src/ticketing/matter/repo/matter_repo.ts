@@ -4,27 +4,43 @@ import { Repository, WrappedPoolClient } from '../../../repository/repository.js
 import { CountRow, CurrentStatusRow, FieldValueRow, MatterRow, StatusOptionRow, TicketingTimeEntryRow } from './types/types.js';
 
 export class MatterRepo extends Repository {
-  /**
-   * @description Retrieve all ticket changes in the system.
-   * @param matterId 
-   * @returns 
-   */
-  async getTicketingCycleTimeHistory(matterId: string) {
+  async getTransitionInfo(matterId: string) {
     return this.executeAndRelease(async (client) => {
       const rows = await this.queryRows<TicketingTimeEntryRow>(
         client,
-        `SELECT tfsg_from.name, tfsg_to.name, th.id, th.from_status_id as status_from, th.to_status_id as status_to, th.transitioned_at as changed_at 
+        `SELECT 
+           tfsg_from.name, 
+           tfsg_to.name, 
+           th.id, 
+           th.from_status_id as status_from, 
+           th.to_status_id as status_to, 
+           th.transitioned_at as changed_at,
+           -- Calculate total duration in milliseconds using window function
+           ROUND(EXTRACT(EPOCH FROM (
+             LAST_VALUE(th.transitioned_at) OVER (ORDER BY th.transitioned_at ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) - 
+             FIRST_VALUE(th.transitioned_at) OVER (ORDER BY th.transitioned_at ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)
+           )) * 1000) as total_duration_ms
          FROM ticketing_cycle_time_histories th 
          LEFT JOIN ticketing_field_status_options tfso_from ON th.from_status_id = tfso_from.id
          LEFT JOIN ticketing_field_status_options tfso_to ON th.to_status_id = tfso_to.id
          LEFT JOIN ticketing_field_status_groups tfsg_from ON tfso_from.group_id = tfsg_from.id
          LEFT JOIN ticketing_field_status_groups tfsg_to ON tfso_to.group_id = tfsg_to.id
-         WHERE ticket_id = $1 
-         ORDER BY transitioned_at ASC`,
+         WHERE th.ticket_id = $1 
+         ORDER BY th.transitioned_at ASC`,
         [matterId],
       );
 
-      return rows;
+      if (rows.length === 0) {
+        return {
+          totalDurationMs: 0,
+          transitions: [],
+        }
+      }
+
+      return {
+        totalDurationMs: Number(rows[0].total_duration_ms),
+        transitions: rows,
+      }
     });
   }
 
