@@ -41,25 +41,20 @@ export const mockUsers = {
 
 // Mock status values
 export const mockStatuses = {
-  backlog: {
+  toDo: {
     statusId: 'status-1',
-    groupName: 'To Do',
+    groupName: 'Backlog',
+    label: 'To Do',
   } as StatusValue,
-  active: {
+  inProgress: {
     statusId: 'status-2',
-    groupName: 'In Progress',
+    groupName: 'Active',
+    label: 'In Progress',
   } as StatusValue,
-  review: {
+  done: {
     statusId: 'status-3',
-    groupName: 'In Progress',
-  } as StatusValue,
-  completed: {
-    statusId: 'status-4',
-    groupName: 'Done',
-  } as StatusValue,
-  closed: {
-    statusId: 'status-5',
-    groupName: 'Done',
+    groupName: 'Complete',
+    label: 'Done',
   } as StatusValue,
 };
 
@@ -78,51 +73,51 @@ export function createMockMatter(overrides: Partial<Matter> = {}): Matter {
         value: 'Contract Review',
         displayValue: 'Contract Review',
       },
-      'Case Number': {
+      'case number': {
         fieldId: 'field-2',
-        fieldName: 'Case Number',
+        fieldName: 'case number',
         fieldType: 'number',
         value: 1000,
         displayValue: '1,000',
       },
-      Status: {
+      status: {
         fieldId: 'field-3',
-        fieldName: 'Status',
+        fieldName: 'status',
         fieldType: 'status',
-        value: mockStatuses.active,
-        displayValue: 'Active',
+        value: mockStatuses.inProgress,
+        displayValue: 'In Progress',
       },
-      'Assigned To': {
+      'assigned to': {
         fieldId: 'field-4',
-        fieldName: 'Assigned To',
+        fieldName: 'assigned to',
         fieldType: 'user',
         value: mockUsers.alice,
         displayValue: 'Alice Brown',
       },
-      Priority: {
+      priority: {
         fieldId: 'field-5',
-        fieldName: 'Priority',
+        fieldName: 'priority',
         fieldType: 'select',
         value: 'medium',
         displayValue: 'Medium',
       },
-      'Contract Value': {
+      'contract value': {
         fieldId: 'field-6',
-        fieldName: 'Contract Value',
+        fieldName: 'contract value',
         fieldType: 'currency',
         value: { amount: 50000, currency: 'USD' } as CurrencyValue,
         displayValue: '50,000 USD',
       },
-      'Due Date': {
+      'due date': {
         fieldId: 'field-7',
-        fieldName: 'Due Date',
+        fieldName: 'due date',
         fieldType: 'date',
         value: '2025-12-31T00:00:00.000Z',
         displayValue: '12/31/2025',
       },
-      Urgent: {
+      urgent: {
         fieldId: 'field-8',
-        fieldName: 'Urgent',
+        fieldName: 'urgent',
         fieldType: 'boolean',
         value: false,
         displayValue: '✗',
@@ -154,49 +149,49 @@ export const mockMatters: Matter[] = [
         value: 'Patent Application Review',
         displayValue: 'Patent Application Review',
       },
-      'Case Number': {
+      'case number': {
         fieldId: 'field-2',
-        fieldName: 'Case Number',
+        fieldName: 'case number',
         fieldType: 'number',
         value: 1001,
         displayValue: '1,001',
       },
-      Status: {
+      status: {
         fieldId: 'field-3',
-        fieldName: 'Status',
+        fieldName: 'status',
         fieldType: 'status',
-        value: mockStatuses.completed,
-        displayValue: 'Completed',
+        value: mockStatuses.done,
+        displayValue: 'Done',
       },
-      'Assigned To': {
+      'assigned to': {
         fieldId: 'field-4',
-        fieldName: 'Assigned To',
+        fieldName: 'assigned to',
         fieldType: 'user',
         value: mockUsers.alice,
         displayValue: 'Alice Brown',
       },
-      Priority: {
+      priority: {
         fieldId: 'field-5',
-        fieldName: 'Priority',
+        fieldName: 'priority',
         fieldType: 'select',
         value: 'high',
         displayValue: 'High',
       },
-      'Contract Value': {
+      'contract value': {
         fieldId: 'field-6',
-        fieldName: 'Contract Value',
+        fieldName: 'contract value',
         fieldType: 'currency',
         value: { amount: 150000, currency: 'USD' } as CurrencyValue,
         displayValue: '150,000 USD',
       },
-      'Due Date': {
+      'due date': {
         fieldId: 'field-7',
-        fieldName: 'Due Date',
+        fieldName: 'due date',
         fieldType: 'date',
         value: '2025-12-20T00:00:00.000Z',
         displayValue: '12/20/2025',
       },
-      Urgent: {
+      urgent: {
         fieldId: 'field-8',
         fieldName: 'Urgent',
         fieldType: 'boolean',
@@ -223,51 +218,51 @@ export const mockMatters: Matter[] = [
         value: 'Corporate Merger Agreement',
         displayValue: 'Corporate Merger Agreement',
       },
-      'Case Number': {
+      'case number': {
         fieldId: 'field-2',
-        fieldName: 'Case Number',
+        fieldName: 'case number',
         fieldType: 'number',
         value: 1002,
         displayValue: '1,002',
       },
-      Status: {
+      status: {
         fieldId: 'field-3',
-        fieldName: 'Status',
+        fieldName: 'status',
         fieldType: 'status',
-        value: mockStatuses.active,
-        displayValue: 'Active',
+        value: mockStatuses.inProgress,
+        displayValue: 'In Progress',
       },
-      'Assigned To': {
+      'assigned to': {
         fieldId: 'field-4',
-        fieldName: 'Assigned To',
+        fieldName: 'assigned to',
         fieldType: 'user',
         value: mockUsers.bob,
         displayValue: 'Bob Johnson',
       },
-      Priority: {
+      priority: {
         fieldId: 'field-5',
-        fieldName: 'Priority',
+        fieldName: 'priority',
         fieldType: 'select',
         value: 'high',
         displayValue: 'High',
       },
-      'Contract Value': {
+      'contract value': {
         fieldId: 'field-6',
-        fieldName: 'Contract Value',
+        fieldName: 'contract value',
         fieldType: 'currency',
         value: { amount: 500000, currency: 'USD' } as CurrencyValue,
         displayValue: '500,000 USD',
       },
-      'Due Date': {
+      'due date': {
         fieldId: 'field-7',
-        fieldName: 'Due Date',
+        fieldName: 'due date',
         fieldType: 'date',
         value: '2026-01-15T00:00:00.000Z',
         displayValue: '1/15/2026',
       },
-      Urgent: {
+      urgent: {
         fieldId: 'field-8',
-        fieldName: 'Urgent',
+        fieldName: 'urgent',
         fieldType: 'boolean',
         value: true,
         displayValue: '✓',
@@ -292,51 +287,51 @@ export const mockMatters: Matter[] = [
         value: 'Trademark Registration',
         displayValue: 'Trademark Registration',
       },
-      'Case Number': {
+      'case number': {
         fieldId: 'field-2',
-        fieldName: 'Case Number',
+        fieldName: 'case number',
         fieldType: 'number',
         value: 1003,
         displayValue: '1,003',
       },
-      Status: {
+      status: {
         fieldId: 'field-3',
-        fieldName: 'Status',
+        fieldName: 'status',
         fieldType: 'status',
-        value: mockStatuses.backlog,
-        displayValue: 'Backlog',
+        value: mockStatuses.toDo,
+        displayValue: 'To Do',
       },
-      'Assigned To': {
+      'assigned to': {
         fieldId: 'field-4',
-        fieldName: 'Assigned To',
+        fieldName: 'assigned to',
         fieldType: 'user',
         value: mockUsers.jane,
         displayValue: 'Jane Smith',
       },
-      Priority: {
+      priority: {
         fieldId: 'field-5',
-        fieldName: 'Priority',
+        fieldName: 'priority',
         fieldType: 'select',
         value: 'low',
         displayValue: 'Low',
       },
-      'Contract Value': {
+      'contract value': {
         fieldId: 'field-6',
-        fieldName: 'Contract Value',
+        fieldName: 'contract value',
         fieldType: 'currency',
         value: { amount: 25000, currency: 'USD' } as CurrencyValue,
         displayValue: '25,000 USD',
       },
-      'Due Date': {
+      'due date': {
         fieldId: 'field-7',
-        fieldName: 'Due Date',
+        fieldName: 'due date',
         fieldType: 'date',
         value: '2026-02-28T00:00:00.000Z',
         displayValue: '2/28/2026',
       },
-      Urgent: {
+      urgent: {
         fieldId: 'field-8',
-        fieldName: 'Urgent',
+        fieldName: 'urgent',
         fieldType: 'boolean',
         value: false,
         displayValue: '✗',
@@ -361,51 +356,51 @@ export const mockMatters: Matter[] = [
         value: 'Employment Contract Dispute',
         displayValue: 'Employment Contract Dispute',
       },
-      'Case Number': {
+      'case number': {
         fieldId: 'field-2',
-        fieldName: 'Case Number',
+        fieldName: 'case number',
         fieldType: 'number',
         value: 1004,
         displayValue: '1,004',
       },
-      Status: {
+      status: {
         fieldId: 'field-3',
-        fieldName: 'Status',
+        fieldName: 'status',
         fieldType: 'status',
-        value: mockStatuses.review,
-        displayValue: 'Review',
+        value: mockStatuses.inProgress,
+        displayValue: 'In Progress',
       },
-      'Assigned To': {
+      'assigned to': {
         fieldId: 'field-4',
-        fieldName: 'Assigned To',
+        fieldName: 'assigned to',
         fieldType: 'user',
         value: mockUsers.carol,
         displayValue: 'Carol White',
       },
-      Priority: {
+      priority: {
         fieldId: 'field-5',
-        fieldName: 'Priority',
+        fieldName: 'priority',
         fieldType: 'select',
         value: 'medium',
         displayValue: 'Medium',
       },
-      'Contract Value': {
+      'contract value': {
         fieldId: 'field-6',
-        fieldName: 'Contract Value',
+        fieldName: 'contract value',
         fieldType: 'currency',
         value: { amount: 75000, currency: 'USD' } as CurrencyValue,
         displayValue: '75,000 USD',
       },
-      'Due Date': {
+      'due date': {
         fieldId: 'field-7',
-        fieldName: 'Due Date',
+        fieldName: 'due date',
         fieldType: 'date',
         value: '2025-12-25T00:00:00.000Z',
         displayValue: '12/25/2025',
       },
-      Urgent: {
+      urgent: {
         fieldId: 'field-8',
-        fieldName: 'Urgent',
+        fieldName: 'urgent',
         fieldType: 'boolean',
         value: false,
         displayValue: '✗',
@@ -430,51 +425,51 @@ export const mockMatters: Matter[] = [
         value: 'Real Estate Transaction',
         displayValue: 'Real Estate Transaction',
       },
-      'Case Number': {
+      'case number': {
         fieldId: 'field-2',
-        fieldName: 'Case Number',
+        fieldName: 'case number',
         fieldType: 'number',
         value: 1005,
         displayValue: '1,005',
       },
-      Status: {
+      status: {
         fieldId: 'field-3',
-        fieldName: 'Status',
+        fieldName: 'status',
         fieldType: 'status',
-        value: mockStatuses.closed,
-        displayValue: 'Closed',
+        value: mockStatuses.done,
+        displayValue: 'Done',
       },
-      'Assigned To': {
+      'assigned to': {
         fieldId: 'field-4',
-        fieldName: 'Assigned To',
+        fieldName: 'assigned to',
         fieldType: 'user',
         value: mockUsers.david,
         displayValue: 'David Lee',
       },
-      Priority: {
+      priority: {
         fieldId: 'field-5',
-        fieldName: 'Priority',
+        fieldName: 'priority',
         fieldType: 'select',
         value: 'high',
         displayValue: 'High',
       },
-      'Contract Value': {
+      'contract value': {
         fieldId: 'field-6',
-        fieldName: 'Contract Value',
+        fieldName: 'contract value',
         fieldType: 'currency',
         value: { amount: 1200000, currency: 'USD' } as CurrencyValue,
         displayValue: '1,200,000 USD',
       },
-      'Due Date': {
+      'due date': {
         fieldId: 'field-7',
-        fieldName: 'Due Date',
+        fieldName: 'due date',
         fieldType: 'date',
         value: '2025-11-30T00:00:00.000Z',
         displayValue: '11/30/2025',
       },
-      Urgent: {
+      urgent: {
         fieldId: 'field-8',
-        fieldName: 'Urgent',
+        fieldName: 'urgent',
         fieldType: 'boolean',
         value: true,
         displayValue: '✓',

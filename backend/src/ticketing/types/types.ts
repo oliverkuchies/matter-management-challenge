@@ -2,17 +2,22 @@ export interface Matter {
   id: string;
   boardId: string;
   fields: Record<string, FieldValue>;
-  cycleTime?: CycleTime;
-  sla?: SLAStatus;
   createdAt: string;
   updatedAt: string;
 }
+
+export interface TransformedMatter extends Matter {
+  cycleTime: CycleTime;
+  sla: SLAStatus;
+}
+
+export type FieldValueType = string | number | boolean | Date | CurrencyValue | UserValue | StatusValue | null;
 
 export interface FieldValue {
   fieldId: string;
   fieldName: string;
   fieldType: FieldType;
-  value: string | number | boolean | Date | CurrencyValue | UserValue | StatusValue | null;
+  value: FieldValueType;
   displayValue: string | null;
 }
 
@@ -45,8 +50,8 @@ export interface CycleTime {
   resolutionTimeMs: number;
   resolutionTimeFormatted: string;
   isInProgress: boolean;
-  startedAt: Date | null;
-  completedAt: Date | null;
+  startedAt: string | null;
+  completedAt: string | null;
 }
 
 export type SLAStatus = 'In Progress' | 'Met' | 'Breached';

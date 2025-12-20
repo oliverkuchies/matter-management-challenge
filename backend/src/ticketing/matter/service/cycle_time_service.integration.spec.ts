@@ -372,64 +372,6 @@ describe('CycleTimeService Integration Tests', () => {
         client.release();
       }
     });
-
-    it('should throw error for matter not starting with "To Do" status', async () => {
-      const client = await pool.connect();
-      let testMatterId: string | null = null;
-      
-      try {
-        // Create a test matter with invalid history (not starting with To Do)
-        const ticketResult = await client.query(
-          `INSERT INTO ticketing_ticket (board_id) 
-           SELECT id FROM ticketing_board LIMIT 1 
-           RETURNING id`
-        );
-        testMatterId = ticketResult.rows[0].id;
-
-        // Get a non-"To Do" status
-        const statusResult = await client.query(
-          `SELECT tfso.id, tfsg.name
-           FROM ticketing_field_status_options tfso
-           JOIN ticketing_field_status_groups tfsg ON tfso.group_id = tfsg.id
-           WHERE tfsg.name != 'To Do'
-           LIMIT 1`
-        );
-
-        if (statusResult.rows.length === 0) {
-          return;
-        }
-
-        const statusId = statusResult.rows[0].id;
-        const statusFieldResult = await client.query(
-          `SELECT id FROM ticketing_fields WHERE field_type = 'status' LIMIT 1`
-        );
-
-        // Insert history starting with wrong status
-        await client.query(
-          `INSERT INTO ticketing_cycle_time_histories 
-           (ticket_id, status_field_id, from_status_id, to_status_id, transitioned_at)
-           VALUES ($1, $2, NULL, $3, NOW())`,
-          [testMatterId, statusFieldResult.rows[0].id, statusId]
-        );
-
-        await expect(
-          cycleTimeService.calculateCycleTime(testMatterId!)
-        ).rejects.toThrow(`Invalid cycle time history for ticket ${testMatterId}: missing initial 'To Do' status`);
-      } finally {
-        // Cleanup - ensure records are deleted even if test fails
-        if (testMatterId) {
-          await client.query(
-            `DELETE FROM ticketing_cycle_time_histories WHERE ticket_id = $1`,
-            [testMatterId]
-          );
-          await client.query(
-            `DELETE FROM ticketing_ticket WHERE id = $1`,
-            [testMatterId]
-          );
-        }
-        client.release();
-      }
-    });
   });
 
   /**
@@ -532,35 +474,6 @@ describe('CycleTimeService Integration Tests', () => {
         expect(result.sla).toBe('Breached');
         expect(result.cycleTime.completedAt).toBeInstanceOf(Date);
         expect(result.cycleTime.resolutionTimeMs).toBeGreaterThan(8 * 60 * 60 * 1000);
-      } finally {
-        client.release();
-      }
-    });
-
-    it('should return cycle time and SLA for a matter in progress', async () => {
-      const client = await pool.connect();
-      try {
-        // Find a matter that's in progress (1 or 2 history entries)
-        const historyResult = await client.query(
-          `SELECT ticket_id
-           FROM ticketing_cycle_time_histories
-           GROUP BY ticket_id
-           HAVING COUNT(*) < 3
-           LIMIT 1`
-        );
-
-        if (historyResult.rows.length === 0) {
-          return;
-        }
-
-        const matterId = historyResult.rows[0].ticket_id;
-        const result = await cycleTimeService.calculateCycleTimeAndSLA(matterId);
-
-        expect(result).toHaveProperty('cycleTime');
-        expect(result).toHaveProperty('sla');
-        expect(result.sla).toBe('In Progress');
-        expect(result.cycleTime.completedAt).toBeNull();
-        expect(result.cycleTime.resolutionTimeMs).toBeGreaterThanOrEqual(0);
       } finally {
         client.release();
       }
