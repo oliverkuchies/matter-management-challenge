@@ -25,7 +25,6 @@ export function getStatusBadgeColor(status: string): string {
 }
 
 export function MatterTable({ matters, sortBy, sortOrder, onSort }: MatterTableProps) {
-  console.log('Rendering MatterTable with matters:', matters);
   const { statusFields } = useStatusFieldOptions();
   const { updateStatusAsync, isUpdating } = useUpdateMatterStatus();
 

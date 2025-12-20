@@ -31,9 +31,6 @@ export class MatterService {
       }),
     );
 
-        console.log('firstMatter enriched from repo:', matters[0].id);
-
-
     enrichedMatters = sortMatters(enrichedMatters, sortBy, sortOrder);
     const totalPages = Math.ceil(total / limit);
 
