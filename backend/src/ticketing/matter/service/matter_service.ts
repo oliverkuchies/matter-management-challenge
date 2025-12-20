@@ -1,6 +1,7 @@
 import { MatterRepo } from '../repo/matter_repo.js';
 import { CycleTimeService } from './cycle_time_service.js';
-import { Matter, MatterListParams, MatterListResponse, StatusValue, CurrencyValue, UserValue } from '../../types/types.js';
+import { sortMatters } from './sort-utils.js';
+import { MatterListParams, MatterListResponse, StatusValue, CurrencyValue, UserValue, TransformedMatter } from '../../types/types.js';
 
 export class MatterService {
   private matterRepo: MatterRepo;
@@ -12,11 +13,11 @@ export class MatterService {
   }
 
   async getMatters(params: MatterListParams): Promise<MatterListResponse> {
-    const { page = 1, limit = 25 } = params;
+    const { page = 1, limit = 25, sortBy = 'createdAt', sortOrder = 'asc' } = params;
     const { matters, total } = await this.matterRepo.getMatters(params);
-
+    
     // Calculate cycle time and SLA for each matter
-    const enrichedMatters = await Promise.all(
+    let enrichedMatters : TransformedMatter[] = await Promise.all(
       matters.map(async (matter) => {
         const { cycleTime, sla } = await this.cycleTimeService.calculateCycleTimeAndSLA(
           matter.id
@@ -30,6 +31,7 @@ export class MatterService {
       }),
     );
 
+    enrichedMatters = sortMatters(enrichedMatters, sortBy, sortOrder);
     const totalPages = Math.ceil(total / limit);
 
     return {
@@ -45,7 +47,7 @@ export class MatterService {
       return this.matterRepo.getAllStatuses();
   }   
 
-  async getMatterById(matterId: string): Promise<Matter | null> {
+  async getMatterById(matterId: string): Promise<TransformedMatter | null> {
     const matter = await this.matterRepo.getMatterById(matterId);
     
     if (!matter) {

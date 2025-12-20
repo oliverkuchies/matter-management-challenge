@@ -36,6 +36,31 @@ export function MatterTable({ matters, sortBy, sortOrder, onSort }: MatterTableP
     });
   };
 
+  // Define columns configuration
+  const columns = [
+    { label: 'Subject', fieldName: 'subject', sortKey: 'subject', align: 'left' },
+    { label: 'Case Number', fieldName: 'case number', sortKey: 'case number', align: 'left' },
+    { label: 'Status', fieldName: 'status', sortKey: 'status', align: 'left' },
+    { label: 'Assigned To', fieldName: 'assigned to', sortKey: 'assigned to', align: 'left' },
+    { label: 'Priority', fieldName: 'priority', sortKey: 'priority', align: 'left' },
+    {
+      label: 'Contract Value',
+      fieldName: 'contract value',
+      sortKey: 'contract value',
+      align: 'left',
+    },
+    { label: 'Due Date', fieldName: 'due date', sortKey: 'due date', align: 'left' },
+    { label: 'Urgent', fieldName: 'urgent', sortKey: 'urgent', align: 'center' },
+    {
+      label: 'Resolution Time',
+      fieldName: 'resolution-time',
+      sortKey: 'resolution_time',
+      align: 'left',
+      isComputed: true,
+    },
+    { label: 'SLA', fieldName: 'sla', sortKey: 'sla', align: 'left', isComputed: true },
+  ];
+
   const renderSortIcon = (column: string) => {
     if (sortBy !== column) {
       return (
@@ -66,7 +91,33 @@ export function MatterTable({ matters, sortBy, sortOrder, onSort }: MatterTableP
     );
   };
 
-  const renderFieldValue = (matter: Matter, fieldName: string) => {
+  /**
+   * Renders the value of a field for a given matter
+   * @param matter - The Matter object
+   * @param fieldName - The name of the field to render
+   * @param isComputed - Whether the field is a computed field (e.g., resolution time, SLA)
+   * @returns A JSX element representing the field value
+   */
+  const renderFieldValue = (matter: Matter, fieldName: string, isComputed = false) => {
+    if (isComputed) {
+      if (fieldName === 'resolution-time') {
+        return (
+          <span className="text-sm text-gray-600">
+            {matter.cycleTime?.resolutionTimeFormatted || 'N/A'}
+          </span>
+        );
+      }
+      if (fieldName === 'sla') {
+        return (
+          <span
+            className={`px-3 py-1 text-xs font-medium rounded-full border transition-all duration-200 ${getStatusBadgeColor(matter.sla)}`}
+          >
+            {matter.sla}
+          </span>
+        );
+      }
+    }
+
     const field = matter.fields[fieldName];
     if (!field) return <span className="text-gray-400">N/A</span>;
 
@@ -135,83 +186,37 @@ export function MatterTable({ matters, sortBy, sortOrder, onSort }: MatterTableP
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th
-              onClick={() => onSort('subject')}
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-            >
-              <div className="flex items-center gap-1">
-                Subject
-                {renderSortIcon('subject')}
-              </div>
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Case Number
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Status
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Assigned To
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Priority
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Contract Value
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Due Date
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">
-              Urgent
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Resolution Time
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              SLA
-            </th>
+            {columns.map((column) => (
+              <th
+                key={column.sortKey}
+                onClick={() => onSort(column.sortKey)}
+                className={`px-6 py-3 text-${column.align} text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100`}
+              >
+                <div className="flex items-center gap-1">
+                  {column.label}
+                  {renderSortIcon(column.sortKey)}
+                </div>
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {matters.map((matter) => (
             <tr key={matter.id} className="hover:bg-gray-50">
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-medium text-gray-900">
-                  {renderFieldValue(matter, 'subject')}
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {renderFieldValue(matter, 'Case Number')}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">{renderFieldValue(matter, 'Status')}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {renderFieldValue(matter, 'Assigned To')}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {renderFieldValue(matter, 'Priority')}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {renderFieldValue(matter, 'Contract Value')}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {renderFieldValue(matter, 'Due Date')}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                {renderFieldValue(matter, 'Urgent')}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="text-sm text-gray-600">
-                  {matter.cycleTime?.resolutionTimeFormatted}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span
-                  className={`px-3 py-1 text-xs font-medium rounded-full border transition-all duration-200 ${getStatusBadgeColor(matter.sla)}`}
+              {columns.map((column) => (
+                <td
+                  key={`${matter.id}-${column.sortKey}`}
+                  className={`px-6 py-4 whitespace-nowrap text-sm ${column.align === 'center' ? 'text-center' : 'text-gray-500'}`}
                 >
-                  {matter.sla}
-                </span>
-              </td>
+                  {column.fieldName === 'subject' ? (
+                    <div className="font-medium text-gray-900">
+                      {renderFieldValue(matter, column.fieldName, column.isComputed)}
+                    </div>
+                  ) : (
+                    renderFieldValue(matter, column.fieldName, column.isComputed)
+                  )}
+                </td>
+              ))}
             </tr>
           ))}
         </tbody>

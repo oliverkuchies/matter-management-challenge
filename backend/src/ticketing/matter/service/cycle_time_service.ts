@@ -1,7 +1,7 @@
 import { config } from '../../../utils/config.js';
 import { SLAStatus, CycleTime } from '../../types/types.js';
 import MatterRepo from '../repo/matter_repo.js';
-import { calculateDifference, formatDuration } from './time-utils.js';
+import { formatDuration } from './time-utils.js';
 
 /**
  * CycleTimeService - Calculate resolution times and SLA status for matters

@@ -94,7 +94,7 @@ export class MatterRepo extends Repository {
    * - Use connection pooling effectively
    */
   async getMatters(params: MatterListParams) {
-    const { page = 1, limit = 25, sortBy = 'created_at', sortOrder = 'desc' } = params;
+    const { page = 1, limit = 25 } = params;
     const offset = (page - 1) * limit;
 
     return await this.executeAndRelease<{ matters: Matter[]; total: number }>(async (client) => {
@@ -103,14 +103,6 @@ export class MatterRepo extends Repository {
       const searchCondition = '';
       const queryParams: (string | number)[] = [];
       const paramIndex = 1;
-
-      // Determine sort column
-      let orderByClause = 'tt.created_at DESC';
-      if (sortBy === 'created_at') {
-        orderByClause = `tt.created_at ${sortOrder.toUpperCase()}`;
-      } else if (sortBy === 'updated_at') {
-        orderByClause = `tt.updated_at ${sortOrder.toUpperCase()}`;
-      }
 
       // Get total count
       // TODO - Address security: Prevent SQL injection in searchCondition
@@ -125,29 +117,35 @@ export class MatterRepo extends Repository {
       const total = parseInt(countRows[0].total);
 
       // Get matters
-      // TODO - Address security: Prevent SQL injection in orderByClause
       const mattersQuery = `
         SELECT DISTINCT tt.id, tt.board_id, tt.created_at, tt.updated_at
         FROM ticketing_ticket tt
         LEFT JOIN ticketing_ticket_field_value ttfv ON tt.id = ttfv.ticket_id
         WHERE 1=1 ${searchCondition}
-        ORDER BY ${orderByClause}
+        ORDER BY tt.created_at DESC
         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
       `;
       
       queryParams.push(limit, offset);
+      
       const mattersRows = await this.queryRows<MatterRow>(client, mattersQuery, queryParams);
 
-      // Get all fields for these matters
+      // Get all fields for these matters in a single query
       const matters: Matter[] = [];
+      
+      if (mattersRows.length === 0) {
+        return { matters, total };
+      }
 
+      const matterIds = mattersRows.map(row => row.id);
+      const fieldsByMatterId = await this.getMatterFieldsBulk(client, matterIds);
+
+      // Construct matters array with fields
       for (const matterRow of mattersRows) {
-        const fields = await this.getMatterFields(client, matterRow.id);
-        
         matters.push({
           id: matterRow.id,
           boardId: matterRow.board_id,
-          fields,
+          fields: fieldsByMatterId.get(matterRow.id) || {},
           createdAt: matterRow.created_at,
           updatedAt: matterRow.updated_at,
         });
@@ -185,6 +183,132 @@ export class MatterRepo extends Repository {
         updatedAt: matterRow.updated_at,
       };
     });
+  }
+
+  /**
+   * Get all field values for multiple matters in a single query
+   */
+  private async getMatterFieldsBulk(client: WrappedPoolClient, matterIds: string[]): Promise<Map<string, Record<string, FieldValue>>> {
+    const allFieldsRows = await this.queryRows<FieldValueRow & { ticket_id: string }>(
+      client,
+      `SELECT 
+        ttfv.ticket_id,
+        ttfv.id,
+        ttfv.ticket_field_id,
+        tf.name as field_name,
+        tf.field_type,
+        ttfv.text_value,
+        ttfv.string_value,
+        ttfv.number_value,
+        ttfv.date_value,
+        ttfv.boolean_value,
+        ttfv.currency_value,
+        ttfv.user_value,
+        ttfv.select_reference_value_uuid,
+        ttfv.status_reference_value_uuid,
+        -- User data
+        u.id as user_id,
+        u.email as user_email,
+        u.first_name as user_first_name,
+        u.last_name as user_last_name,
+        -- Select option label
+        tfo.label as select_option_label,
+        -- Status option data
+        tfso.label as status_option_label,
+        tfsg.name as status_group_name
+       FROM ticketing_ticket_field_value ttfv
+       JOIN ticketing_fields tf ON ttfv.ticket_field_id = tf.id
+       LEFT JOIN users u ON ttfv.user_value = u.id
+       LEFT JOIN ticketing_field_options tfo ON ttfv.select_reference_value_uuid = tfo.id
+       LEFT JOIN ticketing_field_status_options tfso ON ttfv.status_reference_value_uuid = tfso.id
+       LEFT JOIN ticketing_field_status_groups tfsg ON tfso.group_id = tfsg.id
+       WHERE ttfv.ticket_id = ANY($1)`,
+      [matterIds],
+    );
+
+    // Group fields by matter ID
+    const fieldsByMatterId = new Map<string, Record<string, FieldValue>>();
+    
+    for (const row of allFieldsRows) {
+      if (!fieldsByMatterId.has(row.ticket_id)) {
+        fieldsByMatterId.set(row.ticket_id, {});
+      }
+      
+      const fields = fieldsByMatterId.get(row.ticket_id)!;
+      const { value, displayValue } = this.parseFieldValue(row);
+
+      // Making them all lowercase for easier sorting.. before it was kinda mixed
+      fields[row.field_name.toLowerCase()] = {
+        fieldId: row.ticket_field_id,
+        fieldName: row.field_name,
+        fieldType: row.field_type,
+        value,
+        displayValue,
+      };
+    }
+
+    return fieldsByMatterId;
+  }
+
+  /**
+   * Parse field value based on field type
+   */
+  private parseFieldValue(row: FieldValueRow) {
+    let value: string | number | boolean | Date | CurrencyValue | UserValue | StatusValue | null = null;
+    let displayValue: string | null = null;
+
+    switch (row.field_type) {
+      case 'text':
+        value = row.text_value || row.string_value;
+        break;
+      case 'number':
+        value = row.number_value ? parseFloat(row.number_value) : null;
+        displayValue = value !== null ? value.toLocaleString() : null;
+        break;
+      case 'date':
+        value = row.date_value;
+        displayValue = row.date_value ? new Date(row.date_value).toLocaleDateString() : null;
+        break;
+      case 'boolean':
+        value = row.boolean_value;
+        displayValue = value ? '✓' : '✗';
+        break;
+      case 'currency':
+        value = row.currency_value;
+        if (row.currency_value) {
+          displayValue = `${row.currency_value.amount.toLocaleString()} ${(row.currency_value as CurrencyValue).currency}`;
+        }
+        break;
+      case 'user':
+        if (row.user_id) {
+          const userValue: UserValue = {
+            id: row.user_id,
+            email: row.user_email,
+            firstName: row.user_first_name,
+            lastName: row.user_last_name,
+            displayName: `${row.user_first_name} ${row.user_last_name}`.trim(),
+          };
+          value = userValue;
+          displayValue = userValue.displayName;
+        }
+        break;
+      case 'select':
+        value = row.select_reference_value_uuid;
+        displayValue = row.select_option_label;
+        break;
+      case 'status':
+        value = row.status_reference_value_uuid;
+        displayValue = row.status_option_label;
+        if (row.status_group_name) {
+          value = {
+            statusId: row.status_reference_value_uuid!,
+            groupName: row.status_group_name,
+          }
+        }
+        break;
+    }
+
+    return { value, displayValue };
   }
 
   /**

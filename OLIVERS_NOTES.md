@@ -2,7 +2,6 @@ My Notes
 - I refactored the repos to use a base repo. Here we can place any repetitive logic, such as transaction wrapping. I will also strive to add row counts, or row retrieval here too for simplicity.
   - At times using ORM's can improve the experience of above ^, but with ORM's building queries can be tricky as you are bound by the constraints of the abstractions.
 - Docker compose automatically uses .env, so I moved env declarations out of docker and isolated them in .env.example (which can be copied to .env).
-- I added storybook, it makes live a lot easier with mock data! It also means that FE and BE work can be isolated, allowing the two domains to operate separately in the business.
 - Updated docker-compose instructions, in my opinion deattached mode makes more sense for engineers.
 - Added barrelling for UI components. (i.e. export * from './blah'). When scaling UI systems, this can cause performance issues - but for small UI Kits it can be quite clean for managing UIs.
 - Added the option to change the status, for the sake of better testing. 
@@ -11,7 +10,7 @@ My Notes
 - Removed typecasting, which is another code smell (as it hides root issues with Typescript used incorrectly)
 - Added React Query for easier updating & retrieval of content. This means that state is managed more on the backend than the frontend, allowing for fresh data when a user sees the page. For instance, if two legal team members are updating the page at once, it would be helpful for latest data to be presented to the other user. Tanstack allows for this using refetching
 - Updated lint rules (including prettier.)
-- 
+
 
 AI Usage
 Where I did NOT use AI:
@@ -20,7 +19,6 @@ Where I did NOT use AI:
 
 
 Where I did use AI:
-- Used AI to create Storybook components for Matter table and Pagination. This will be easier for me to test transitions without mutating the sample data.
 - Created StatusCell with AI, but created auto tests on my own to make sure it meets the necessary criteria. Also ensured it meeted expected standards i.e. Tailwind etc. Noticed dropdown was displaying in a broken fashion, added flex, and flex-col to organise it in the correct manner.
 - Utilised for refactoring. I created the repository base methods, but refactored the existing repos to use them.
 - Refactoring inline objects as interfaces.
@@ -70,6 +68,19 @@ Based on the above, I noticed:
 3) transitioned_at is also missing an index. It is being used for sorting.
 
 After applying those changes, the query speed was improved by 12%.
+
+# Matter Repo Field Retrieval Optimisation
+
+As it stands, the matter field retrieval was suboptimal.
+If there were 100 matters pulled at once, it meant that a field query would need to be executed for each of those matters. Think o(n) where n is 100.
+
+Now its o(1), where 1 is the matter id.
+
+Now its using ANY($1) (which is something like IN(x,y,z) in MySQL), which retrieves all items with given ids at once.
+
+# UI Optimisation
+Cleaned up matter table, it was quite repetitive (hard coded). I used a loop to traverse all items instead and display them such as th, and td.
+
 
 ## Assumptions
 

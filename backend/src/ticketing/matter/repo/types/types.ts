@@ -15,6 +15,7 @@ export interface MatterRow {
   board_id: string;
   created_at: string;
   updated_at: string;
+  fields: FieldValueRow[];
 }
 
 export interface FieldValueRow {
