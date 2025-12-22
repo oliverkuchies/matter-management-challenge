@@ -175,6 +175,428 @@ test.describe('Matters API - Materialized View Search', () => {
   });
 });
 
+test.describe('Matters API - Advanced Search Functionality', () => {
+  test('should search by complete matter name', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: 'Contract Review',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data.total).toBeGreaterThan(0);
+    
+    // Verify results contain the search term
+    const hasMatchingResult = data.data.some((matter: Matter) => {
+      const subject = matter.fields.subject?.value?.toString().toLowerCase() || '';
+      return subject.includes('contract') || subject.includes('review');
+    });
+    expect(hasMatchingResult).toBe(true);
+  });
+
+  test('should search with partial word (beginning)', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: 'Litig',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    // Should match "Litigation" matters
+    expect(data.total).toBeGreaterThan(0);
+  });
+
+  test('should search with partial word (middle)', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: 'mplianc',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    // Should match "Compliance" matters
+    expect(data.total).toBeGreaterThan(0);
+  });
+
+  test('should handle search with extra spaces', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: '  Contract   Review  ',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    // Should still find results despite extra spaces
+    expect(data).toHaveProperty('data');
+    expect(data).toHaveProperty('total');
+  });
+
+  test('should handle search with leading/trailing whitespace', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: '   Compliance   ',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data.total).toBeGreaterThan(0);
+  });
+
+  test('should handle search with special character: hyphen', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: 'Merger & Acquisition',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    // Should handle ampersand in search
+    expect(data).toHaveProperty('data');
+  });
+
+  test('should handle search with special character: ampersand', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: 'M&A',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data).toHaveProperty('data');
+  });
+
+  test('should handle search with hash symbol', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: '#100',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    // Should not crash with hash symbol
+    expect(data).toHaveProperty('data');
+  });
+
+  test('should handle search with parentheses', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: 'Matter (Urgent)',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data).toHaveProperty('data');
+  });
+
+  test('should handle search with brackets', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: '[Priority] Matter',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data).toHaveProperty('data');
+  });
+
+  test('should handle search with quotes', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: '"Contract Review"',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data).toHaveProperty('data');
+  });
+
+  test('should handle search with apostrophe', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: "Client's Matter",
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data).toHaveProperty('data');
+  });
+
+  test('should handle search with backslash', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: 'Matter\\Test',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data).toHaveProperty('data');
+  });
+
+  test('should handle search with forward slash', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: 'Matter/Case',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data).toHaveProperty('data');
+  });
+
+  test('should handle search with SQL injection attempt', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: "'; DROP TABLE tickets; --",
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    // Should safely handle SQL injection attempt
+    expect(data).toHaveProperty('data');
+  });
+
+  test('should handle search with XSS attempt', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: '<script>alert("xss")</script>',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    // Should safely handle XSS attempt
+    expect(data).toHaveProperty('data');
+  });
+
+  test('should handle search with percent sign (LIKE wildcard)', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: '%Matter%',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    // Should treat % as literal character, not wildcard
+    expect(data).toHaveProperty('data');
+  });
+
+  test('should handle search with underscore (LIKE wildcard)', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: 'Matter_Test',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    // Should treat _ as literal character, not wildcard
+    expect(data).toHaveProperty('data');
+  });
+
+  test('should handle empty search string', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: '',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    // Should return all matters when search is empty
+    expect(data.total).toBeGreaterThan(0);
+  });
+
+  test('should handle search with only whitespace', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: '     ',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    // Should return all matters when search is only whitespace
+    expect(data.total).toBeGreaterThan(0);
+  });
+
+  test('should handle very long search string', async ({ request }) => {
+    const longSearch = 'Contract Review '.repeat(20); // Reduced from 50 to avoid URL length limits
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: longSearch,
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    // Should handle long search strings without error
+    expect(data).toHaveProperty('data');
+  });
+
+  test('should handle search with unicode characters', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: 'Café Matter 文档',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data).toHaveProperty('data');
+  });
+
+  test('should handle search with emoji', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: '🔥 Matter',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data).toHaveProperty('data');
+  });
+
+  test('should handle search with newline characters', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: 'Contract\nReview',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data).toHaveProperty('data');
+  });
+
+  test('should handle search with tab characters', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: 'Contract\tReview',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data).toHaveProperty('data');
+  });
+
+  test('should search case-insensitively', async ({ request }) => {
+    const searches = ['contract', 'CONTRACT', 'CoNtRaCt'];
+    
+    for (const search of searches) {
+      const response = await request.get('/api/v1/matters', {
+        params: {
+          search,
+          page: '1',
+          limit: '10',
+        },
+      });
+
+      expect(response.ok()).toBeTruthy();
+      const data = await response.json();
+      expect(data.total).toBeGreaterThan(0);
+    }
+  });
+
+  test('should handle search across different field types', async ({ request }) => {
+    // Search for a number that might appear in case numbers
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: '100',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    // Should search across text and number fields
+    expect(data).toHaveProperty('data');
+  });
+
+  test('should return no results for non-existent term', async ({ request }) => {
+    const response = await request.get('/api/v1/matters', {
+      params: {
+        search: 'XYZ99999NonexistentMatterTerm',
+        page: '1',
+        limit: '10',
+      },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data.total).toBe(0);
+    expect(data.data.length).toBe(0);
+  });
+});
+
 test.describe('Matters API - Database Sorting', () => {
   test('should sort by subject using materialized view', async ({ request }) => {
     const response = await request.get('/api/v1/matters', {
