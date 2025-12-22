@@ -2,9 +2,15 @@ import { Matter, MatterListParams, FieldValue, UserValue, CurrencyValue, StatusV
 import logger from '../../../utils/logger.js';
 import { Repository, WrappedPoolClient } from '../../../repository/repository.js';
 import { CountRow, CurrentStatusRow, FieldValueRow, MatterRow, StatusOptionRow, TicketingTimeEntryRow } from './types/types.js';
+import { redis } from '../../../cache/cache-client.js';
+
+export interface TransitionInfo {
+  totalDurationMs: number;
+  transitions: TicketingTimeEntryRow[];
+}
 
 export class MatterRepo extends Repository {
-  async getTransitionInfo(matterId: string) {
+  async getTransitionInfo(matterId: string): Promise<TransitionInfo> {
     return this.executeAndRelease(async (client) => {
       const rows = await this.queryRows<TicketingTimeEntryRow>(
         client,
@@ -53,6 +59,15 @@ export class MatterRepo extends Repository {
    * { displayValue: "Closed", sequence: 3, statusGroupId: "status-3" }
    */
     async getAllStatuses(): Promise<StatusFieldValue[]> {
+      const cacheKey = 'statuses:all';
+      
+      // Try to get from cache first
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        logger.debug('Cache hit for all statuses');
+        return JSON.parse(cached);
+      }
+
       return this.executeAndRelease(async (client) => {
         const rows = await this.queryRows<StatusOptionRow>(
           client,
@@ -63,11 +78,17 @@ export class MatterRepo extends Repository {
           return [];
         }
 
-        return rows.map((row) => ({
+        const statuses = rows.map((row) => ({
           displayValue: row.label,
           sequence: row.sequence,
           statusGroupId: row.id,
         }));
+
+        // Cache for 1 hour (statuses rarely change)
+        await redis.set(cacheKey, JSON.stringify(statuses), 'EX', 3600);
+        logger.debug('Cached all statuses');
+        
+        return statuses;
       });
     }
 
@@ -93,37 +114,94 @@ export class MatterRepo extends Repository {
    * - Implement query result caching
    * - Use connection pooling effectively
    */
-  async getMatters(params: MatterListParams) {
-    const { page = 1, limit = 25 } = params;
+  async getMatters(params: MatterListParams) : Promise<{ matters: Matter[]; total: number }> {
+    const { page = 1, limit = 25, sortBy = 'created_at', sortOrder = 'asc' } = params;
     const offset = (page - 1) * limit;
 
-    return await this.executeAndRelease<{ matters: Matter[]; total: number }>(async (client) => {
-      // TODO: Implement search condition
-      // Currently search is not implemented - add ILIKE queries with pg_trgm
-      const searchCondition = '';
-      const queryParams: (string | number)[] = [];
-      const paramIndex = 1;
+    // Create cache key from query parameters
+    const cacheKey = `matters:${JSON.stringify({ page, limit, sortBy, sortOrder, search: params.search })}`;
+    
+    // Try cache first (only for first page without search to avoid cache bloat)
+    if (page === 1 && !params.search) {
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        logger.debug('Cache hit for matters list', { page, sortBy, sortOrder });
+        return JSON.parse(cached);
+      }
+    }
 
-      // Get total count
-      // TODO - Address security: Prevent SQL injection in searchCondition
+    const result = await this.executeAndRelease<{ matters: Matter[]; total: number }>(async (client) => {
+      const searchTerm = params.search ?? '';
+      const hasSearch = searchTerm.trim().length > 0;
+
+      // Use materialized view for both count and data queries
+      const queryParams: (string | number)[] = [];
+      let whereClause = '';
+
+      if (hasSearch) {
+        // Use plainto_tsquery for literal text matching without operator interpretation
+        // Then add ILIKE fallback for exact substring matches (handles symbols and partial matches)
+        whereClause = `WHERE (
+          search_vector @@ plainto_tsquery('english', $1)
+          OR searchable_text ILIKE '%' || $1 || '%'
+        )`;
+        queryParams.push(searchTerm);
+      }
+
+      // Get total count from materialized view
       const countQuery = `
-        SELECT COUNT(DISTINCT tt.id) as total
-        FROM ticketing_ticket tt
-        LEFT JOIN ticketing_ticket_field_value ttfv ON tt.id = ttfv.ticket_id
-        WHERE 1=1 ${searchCondition}
+        SELECT COUNT(*) as total
+        FROM ticket_search_index
+        ${whereClause}
       `;
       
       const countRows = await this.queryRows<CountRow>(client, countQuery, queryParams);
       const total = parseInt(countRows[0].total);
 
-      // Get matters
+      // Map sortBy field names to materialized view columns
+      // This handles the mapping from frontend field names to database column names
+      const sortColumnMap: Record<string, string> = {
+        'subject': 'subject_sort',
+        'description': 'description_sort',
+        'case number': 'case_number_sort',
+        'casenumber': 'case_number_sort',
+        'contract value': 'contract_value_sort',
+        'contractvalue': 'contract_value_sort',
+        'due date': 'due_date_sort',
+        'duedate': 'due_date_sort',
+        'urgent': 'urgent_sort',
+        'status': 'status_sort',
+        'priority': 'priority_sort',
+        'assigned to': 'assigned_to_sort',
+        'assignedto': 'assigned_to_sort',
+        'created_at': 'created_at',
+        'createdat': 'created_at',
+        'updated_at': 'updated_at',
+        'updatedat': 'updated_at',
+      };
+
+      // Build ORDER BY clause using materialized view sort columns
+      const sortByLower = sortBy.toLowerCase();
+      const sortColumn = sortColumnMap[sortByLower] || 'created_at';
+      const sortDirection = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+      
+      // NULLS LAST ensures null values are sorted to the end regardless of sort direction
+      const orderByClause = `ORDER BY ${sortColumn} ${sortDirection} NULLS LAST, created_at DESC`;
+
+      // Get matters from materialized view with sorting
+      const limitParamIndex = queryParams.length + 1;
+      const offsetParamIndex = queryParams.length + 2;
+
       const mattersQuery = `
-        SELECT DISTINCT tt.id, tt.board_id, tt.created_at, tt.updated_at
-        FROM ticketing_ticket tt
-        LEFT JOIN ticketing_ticket_field_value ttfv ON tt.id = ttfv.ticket_id
-        WHERE 1=1 ${searchCondition}
-        ORDER BY tt.created_at DESC
-        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+        SELECT 
+          id,
+          board_id,
+          created_at,
+          updated_at
+        FROM ticket_search_index
+        ${whereClause}
+        ${orderByClause}
+        LIMIT $${limitParamIndex} OFFSET $${offsetParamIndex}
       `;
       
       queryParams.push(limit, offset);
@@ -153,6 +231,14 @@ export class MatterRepo extends Repository {
 
       return { matters, total };
     });
+
+    // Cache the result for first page without search (60 second TTL)
+    if (page === 1 && !params.search) {
+      await redis.set(cacheKey, JSON.stringify(result), 'EX', 60);
+      logger.debug('Cached matters list', { page, sortBy, sortOrder });
+    }
+
+    return result;
   }
 
   /**
@@ -354,60 +440,7 @@ export class MatterRepo extends Repository {
     const fields: Record<string, FieldValue> = {};
 
     for (const row of fieldsRows) {
-      let value: string | number | boolean | Date | CurrencyValue | UserValue | StatusValue | null = null;
-      let displayValue: string | null = null;
-
-      switch (row.field_type) {
-        case 'text':
-          value = row.text_value || row.string_value;
-          break;
-        case 'number':
-          value = row.number_value ? parseFloat(row.number_value) : null;
-          displayValue = value !== null ? value.toLocaleString() : null;
-          break;
-        case 'date':
-          value = row.date_value;
-          displayValue = row.date_value ? new Date(row.date_value).toLocaleDateString() : null;
-          break;
-        case 'boolean':
-          value = row.boolean_value;
-          displayValue = value ? '✓' : '✗';
-          break;
-        case 'currency':
-          value = row.currency_value;
-          if (row.currency_value) {
-            displayValue = `${row.currency_value.amount.toLocaleString()} ${(row.currency_value as CurrencyValue).currency}`;
-          }
-          break;
-        case 'user':
-          if (row.user_id) {
-            const userValue: UserValue = {
-              id: row.user_id,
-              email: row.user_email,
-              firstName: row.user_first_name,
-              lastName: row.user_last_name,
-              displayName: `${row.user_first_name} ${row.user_last_name}`.trim(),
-            };
-            value = userValue;
-            displayValue = userValue.displayName;
-          }
-          break;
-        case 'select':
-          value = row.select_reference_value_uuid;
-          displayValue = row.select_option_label;
-          break;
-        case 'status':
-          value = row.status_reference_value_uuid;
-          displayValue = row.status_option_label;
-          // Store group name in metadata for SLA calculations
-          if (row.status_group_name) {
-            value = {
-              statusId: row.status_reference_value_uuid,
-              groupName: row.status_group_name,
-            } as StatusValue;
-          }
-          break;
-      }
+      const { value, displayValue } = this.parseFieldValue(row);
 
       fields[row.field_name] = {
         fieldId: row.ticket_field_id,
@@ -510,9 +543,84 @@ export class MatterRepo extends Repository {
         `UPDATE ticketing_ticket SET updated_at = NOW() WHERE id = $1`,
         [matterId],
       );
+
+      await this.refreshSingleMatterSearchIndex(client, matterId);
+      
+      // Invalidate matters list cache when a matter is updated
+      // Use pattern matching to clear all variations of the matters list cache
+      const pattern = 'matters:*';
+      const keys = await redis.keys(pattern);
+      if (keys.length > 0) {
+        await redis.del(...keys);
+        logger.debug('Invalidated matters list cache after update', { count: keys.length });
+      }
     }, (error) => {
       logger.error('Failed to update matter field' + JSON.stringify({ error, matterId, fieldId }));
     });
+  }
+
+  /**
+   * Refresh search index for a single matter
+   */
+  private async refreshSingleMatterSearchIndex(client: WrappedPoolClient, matterId: string): Promise<void> {
+    // Delete stale entry
+    await client.query(
+      `DELETE FROM ticket_search_index WHERE id = $1`,
+      [matterId]
+    );
+
+    // Re-insert updated entry
+    // This query is already used in schema.sql, but adapted here for single matter
+    await client.query(
+      `INSERT INTO ticket_search_index (id, board_id, created_at, updated_at, searchable_text, search_vector)
+       SELECT 
+         tt.id,
+         tt.board_id,
+         tt.created_at,
+         tt.updated_at,
+         string_agg(
+           COALESCE(
+             CASE tf.field_type
+               WHEN 'text'     THEN ttfv.text_value
+               WHEN 'string'   THEN ttfv.string_value
+               WHEN 'number'   THEN ttfv.number_value::text
+               WHEN 'date'     THEN ttfv.date_value::text
+               WHEN 'boolean'  THEN ttfv.boolean_value::text
+               WHEN 'user'     THEN ttfv.user_value::text
+               WHEN 'select'   THEN ttfv.select_reference_value_uuid::text
+               WHEN 'status'   THEN ttfv.status_reference_value_uuid::text
+               WHEN 'currency' THEN ttfv.currency_value::text
+             END,
+             ''
+           ),
+           ' '
+         ) as searchable_text,
+         to_tsvector('english', 
+           string_agg(
+             COALESCE(
+               CASE tf.field_type
+                 WHEN 'text'     THEN ttfv.text_value
+                 WHEN 'string'   THEN ttfv.string_value
+                 WHEN 'number'   THEN ttfv.number_value::text
+                 WHEN 'date'     THEN ttfv.date_value::text
+                 WHEN 'boolean'  THEN ttfv.boolean_value::text
+                 WHEN 'user'     THEN ttfv.user_value::text
+                 WHEN 'select'   THEN ttfv.select_reference_value_uuid::text
+                 WHEN 'status'   THEN ttfv.status_reference_value_uuid::text
+                 WHEN 'currency' THEN ttfv.currency_value::text
+               END,
+               ''
+             ),
+             ' '
+           )
+         ) as search_vector
+       FROM ticketing_ticket tt
+       LEFT JOIN ticketing_ticket_field_value ttfv ON ttfv.ticket_id = tt.id
+       LEFT JOIN ticketing_fields tf ON tf.id = ttfv.ticket_field_id
+       WHERE tt.id = $1
+       GROUP BY tt.id, tt.board_id, tt.created_at, tt.updated_at`,
+      [matterId]
+    );
   }
 }
 

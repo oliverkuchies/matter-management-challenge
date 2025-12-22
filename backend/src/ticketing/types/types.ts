@@ -2,13 +2,10 @@ export interface Matter {
   id: string;
   boardId: string;
   fields: Record<string, FieldValue>;
+  cycleTime?: CycleTime;
+  sla: SLAStatus;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface TransformedMatter extends Matter {
-  cycleTime: CycleTime;
-  sla: SLAStatus;
 }
 
 export type FieldValueType = string | number | boolean | Date | CurrencyValue | UserValue | StatusValue | null;
@@ -56,12 +53,32 @@ export interface CycleTime {
 
 export type SLAStatus = 'In Progress' | 'Met' | 'Breached';
 
+export type SLAFilter = 'All' | SLAStatus;
+
+export type ResolutionTimeFilter = 
+  | 'All' 
+  | 'Under 1 hour' 
+  | '1-4 hours' 
+  | '4-8 hours' 
+  | 'Over 8 hours';
+
+export type DueDateFilter = 
+  | 'All' 
+  | 'Overdue' 
+  | 'Due Today' 
+  | 'Due This Week' 
+  | 'Due This Month' 
+  | 'No Due Date';
+
 export interface MatterListParams {
   page?: number;
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   search?: string;
+  sla?: SLAFilter;
+  resolutionTime?: ResolutionTimeFilter;
+  dueDate?: DueDateFilter;
 }
 
 export interface MatterListResponse {

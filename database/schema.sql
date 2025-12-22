@@ -168,3 +168,79 @@ CREATE INDEX idx_ticket_field_value_number ON ticketing_ticket_field_value(numbe
 CREATE INDEX idx_ticket_field_value_date ON ticketing_ticket_field_value(date_value);
 CREATE INDEX idx_ticketing_ticket_created_at ON ticketing_ticket(created_at);
 
+-- Create the materialized view for searching and sorting tickets
+CREATE MATERIALIZED VIEW ticket_search_index AS
+SELECT 
+  tt.id,
+  tt.board_id,
+  tt.created_at,
+  tt.updated_at,
+  -- Concatenate all field values into a single searchable text column
+  string_agg(
+    COALESCE(
+      CASE tf.field_type
+        WHEN 'text'     THEN ttfv.text_value
+        WHEN 'string'   THEN ttfv.string_value
+        WHEN 'number'   THEN ttfv.number_value::text
+        WHEN 'date'     THEN ttfv.date_value::text
+        WHEN 'boolean'  THEN ttfv.boolean_value::text
+        WHEN 'user'     THEN ttfv.user_value::text
+        WHEN 'select'   THEN ttfv.select_reference_value_uuid::text
+        WHEN 'status'   THEN ttfv.status_reference_value_uuid::text
+        WHEN 'currency' THEN ttfv.currency_value::text
+      END,
+      ''
+    ),
+    ' '
+  ) as searchable_text,
+  to_tsvector('english', 
+    string_agg(
+      COALESCE(
+        CASE tf.field_type
+          WHEN 'text'     THEN ttfv.text_value
+          WHEN 'string'   THEN ttfv.string_value
+          WHEN 'number'   THEN ttfv.number_value::text
+          WHEN 'date'     THEN ttfv.date_value::text
+          WHEN 'boolean'  THEN ttfv.boolean_value::text
+          WHEN 'user'     THEN ttfv.user_value::text
+          WHEN 'select'   THEN ttfv.select_reference_value_uuid::text
+          WHEN 'status'   THEN ttfv.status_reference_value_uuid::text
+          WHEN 'currency' THEN ttfv.currency_value::text
+        END,
+        ''
+      ),
+      ' '
+    )
+  ) as search_vector,
+  -- Pre-computed sortable columns for common fields (case-insensitive text)
+  MAX(CASE WHEN LOWER(tf.name) = 'subject' THEN LOWER(ttfv.text_value) END) as subject_sort,
+  MAX(CASE WHEN LOWER(tf.name) = 'description' THEN LOWER(ttfv.text_value) END) as description_sort,
+  MAX(CASE WHEN LOWER(tf.name) = 'case number' THEN ttfv.number_value END) as case_number_sort,
+  MAX(CASE WHEN LOWER(tf.name) = 'contract value' THEN (ttfv.currency_value->>'amount')::numeric END) as contract_value_sort,
+  MAX(CASE WHEN LOWER(tf.name) = 'due date' THEN ttfv.date_value END) as due_date_sort,
+  BOOL_OR(CASE WHEN LOWER(tf.name) = 'urgent' THEN ttfv.boolean_value END) as urgent_sort,
+  -- For status, use the label for sorting
+  MAX(CASE WHEN LOWER(tf.name) = 'status' THEN tfso.label END) as status_sort,
+  -- For priority select field, use the label for sorting  
+  MAX(CASE WHEN LOWER(tf.name) = 'priority' THEN tfo.label END) as priority_sort,
+  -- For user fields, use the display name for sorting
+  MAX(CASE WHEN LOWER(tf.name) = 'assigned to' THEN LOWER(u.first_name || ' ' || u.last_name) END) as assigned_to_sort
+FROM ticketing_ticket tt
+LEFT JOIN ticketing_ticket_field_value ttfv ON ttfv.ticket_id = tt.id
+LEFT JOIN ticketing_fields tf ON tf.id = ttfv.ticket_field_id
+LEFT JOIN ticketing_field_status_options tfso ON tfso.id = ttfv.status_reference_value_uuid
+LEFT JOIN ticketing_field_options tfo ON tfo.id = ttfv.select_reference_value_uuid
+LEFT JOIN users u ON u.id = ttfv.user_value
+GROUP BY tt.id, tt.board_id, tt.created_at, tt.updated_at;
+
+-- Create indexes for fast searching and sorting
+CREATE INDEX idx_ticket_search_text ON ticket_search_index USING gin(search_vector);
+CREATE INDEX idx_ticket_search_created ON ticket_search_index(created_at DESC);
+CREATE UNIQUE INDEX idx_ticket_search_id ON ticket_search_index(id);
+-- Indexes for sortable columns
+CREATE INDEX idx_ticket_search_subject ON ticket_search_index(subject_sort);
+CREATE INDEX idx_ticket_search_status ON ticket_search_index(status_sort);
+CREATE INDEX idx_ticket_search_priority ON ticket_search_index(priority_sort);
+CREATE INDEX idx_ticket_search_due_date ON ticket_search_index(due_date_sort);
+CREATE INDEX idx_ticket_search_contract_value ON ticket_search_index(contract_value_sort);
+CREATE INDEX idx_ticket_search_assigned_to ON ticket_search_index(assigned_to_sort);

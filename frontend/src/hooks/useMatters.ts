@@ -1,5 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { MatterListResponse } from '../types/matter';
+import {
+  MatterListResponse,
+  SLAFilter,
+  ResolutionTimeFilter,
+  DueDateFilter,
+} from '../types/matter';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
 
@@ -9,6 +14,9 @@ interface UseMatterParams {
   sortBy: string;
   sortOrder: 'asc' | 'desc';
   search: string;
+  sla: SLAFilter;
+  resolutionTime: ResolutionTimeFilter;
+  dueDate: DueDateFilter;
 }
 
 async function fetchMatters(params: UseMatterParams): Promise<MatterListResponse> {
@@ -18,12 +26,16 @@ async function fetchMatters(params: UseMatterParams): Promise<MatterListResponse
     sortBy: params.sortBy,
     sortOrder: params.sortOrder,
     search: params.search,
+    sla: params.sla,
+    resolutionTime: params.resolutionTime,
+    dueDate: params.dueDate,
   });
 
   const response = await fetch(`${API_URL}/matters?${queryParams}`);
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    // Don't expose HTTP status codes to users
+    throw new Error('Failed to load matters. Please try again.');
   }
 
   return response.json();

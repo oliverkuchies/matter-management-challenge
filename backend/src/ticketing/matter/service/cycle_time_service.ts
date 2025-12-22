@@ -1,7 +1,20 @@
 import { config } from '../../../utils/config.js';
 import { SLAStatus, CycleTime } from '../../types/types.js';
 import MatterRepo from '../repo/matter_repo.js';
-import { formatDuration } from './time-utils.js';
+import { calculateCycleTime, calculateSLAStatus } from './time-utils.js';
+
+export enum StatusGroupEnum {
+  TO_DO = 'To Do',
+  IN_PROGRESS = 'In Progress',
+  DONE = 'Done',
+}
+
+export enum SLAStatusEnum {
+  IN_PROGRESS = 'In Progress',
+  MET = 'Met',
+  BREACHED = 'Breached',
+}
+
 
 /**
  * CycleTimeService - Calculate resolution times and SLA status for matters
@@ -29,79 +42,12 @@ import { formatDuration } from './time-utils.js';
  * - Database query optimization - TODO
  */
 
-export enum StatusGroupEnum {
-  TO_DO = 'To Do',
-  IN_PROGRESS = 'In Progress',
-  DONE = 'Done',
-}
-
-enum SLAStatusEnum {
-  IN_PROGRESS = 'In Progress',
-  MET = 'Met',
-  BREACHED = 'Breached',
-}
-
 export class CycleTimeService {
   private slaThreshHoldMs: number;
   private matterRepo: MatterRepo = new MatterRepo();
 
   constructor() {
     this.slaThreshHoldMs = config.SLA_THRESHOLD_HOURS * 60 * 60 * 1000;
-  }
-
-  /**
-   * Calculate cycle time for a given ticket
-   * @param ticketId - The ID of the ticket to calculate cycle time for
-   * @returns The CycleTime object containing resolution time and timestamps
-   */
-  async calculateCycleTime(ticketId : string): Promise<CycleTime> {
-    const transitionInfo = await this.matterRepo.getTransitionInfo(ticketId);
-    const firstRow = transitionInfo.transitions[0];
-    const lastTransition = transitionInfo.transitions[transitionInfo.transitions.length - 1];
-  
-      if (!lastTransition || lastTransition.name !== StatusGroupEnum.DONE) {
-        return {
-          resolutionTimeMs: transitionInfo.totalDurationMs,
-          resolutionTimeFormatted: formatDuration(transitionInfo.totalDurationMs, lastTransition.name),
-          isInProgress: true,
-          startedAt: new Date(firstRow.changed_at),
-          completedAt: null,
-        }
-      }
-          
-      return {
-        resolutionTimeMs: transitionInfo.totalDurationMs,
-        resolutionTimeFormatted: formatDuration(transitionInfo.totalDurationMs, lastTransition.name),
-        isInProgress: false,
-        startedAt: new Date(firstRow.changed_at),
-        completedAt: new Date(lastTransition.changed_at),
-      }
-  }
-
-  /**
-   * Calculate SLA status based on resolution time and progress
-   * @param resolutionTimeMs - The resolution time in milliseconds
-   * @param isInProgress - Whether the ticket is still in progress
-   * @returns The SLA status as 'In Progress', 'Met', or 'Breached'
-   **
-   */
-  async calculateSLAStatus(resolutionTimeMs: number = 0, isInProgress: boolean = false): Promise<SLAStatus> {
-    if (isInProgress && resolutionTimeMs <= this.slaThreshHoldMs) {
-      return SLAStatusEnum.IN_PROGRESS;
-    }
-    if (resolutionTimeMs === null) {
-      return SLAStatusEnum.IN_PROGRESS;
-    }
-
-    if (resolutionTimeMs <= this.slaThreshHoldMs) {
-      return SLAStatusEnum.MET;
-    }
-
-    if (isInProgress) {
-      return SLAStatusEnum.BREACHED;
-    }
-
-    return SLAStatusEnum.BREACHED;
   }
 
   /**
@@ -112,8 +58,9 @@ export class CycleTimeService {
   async calculateCycleTimeAndSLA(
     ticketId: string
   ): Promise<{ cycleTime: CycleTime; sla: SLAStatus }> {
-    const cycleTime = await this.calculateCycleTime(ticketId);
-    const sla = await this.calculateSLAStatus(cycleTime.resolutionTimeMs ?? 0, cycleTime.isInProgress);
+    const transitionInfo = await this.matterRepo.getTransitionInfo(ticketId);
+    const cycleTime = await calculateCycleTime(transitionInfo);
+    const sla = await calculateSLAStatus(cycleTime.resolutionTimeMs ?? 0, this.slaThreshHoldMs, cycleTime.isInProgress);
       
     return {
       cycleTime,

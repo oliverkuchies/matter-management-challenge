@@ -1,15 +1,15 @@
 import { Request, Response } from 'express';
 import { MatterService } from '../service/matter_service.js';
+import { z } from 'zod';
 import logger from '../../../utils/logger.js';
+
+const paramsSchema = z.object({
+  id: z.string().uuid({ message: 'Invalid matter ID format' }),
+});
 
 export async function getMatterDetails(req: Request, res: Response): Promise<void> {
   try {
-    const { id } = req.params;
-
-    if (!id) {
-      res.status(400).json({ error: 'Matter ID is required' });
-      return;
-    }
+    const { id } = paramsSchema.parse(req.params);
 
     const matterService = new MatterService();
     const matter = await matterService.getMatterById(id);
@@ -21,6 +21,13 @@ export async function getMatterDetails(req: Request, res: Response): Promise<voi
 
     res.json(matter);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({
+        error: 'Invalid matter ID format',
+      });
+      return;
+    }
+    
     logger.error('Error fetching matter details', { error, matterId: req.params.id });
     res.status(500).json({ error: 'Internal server error' });
   }

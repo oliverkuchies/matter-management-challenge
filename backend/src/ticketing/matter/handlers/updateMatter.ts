@@ -3,21 +3,41 @@ import { MatterService } from '../service/matter_service.js';
 import { z } from 'zod';
 import logger from '../../../utils/logger.js';
 
+const paramsSchema = z.object({
+  id: z.string().uuid({ message: 'Invalid matter ID format' }),
+});
+
 const updateSchema = z.object({
-  fieldId: z.string().uuid(),
+  fieldId: z.string().uuid({ message: 'Invalid field ID format' }),
   fieldType: z.enum(['text', 'number', 'select', 'date', 'currency', 'boolean', 'status', 'user']),
-  value: z.any(),
+  value: z.union([
+    z.string().max(10000),
+    z.number(),
+    z.boolean(),
+    z.date(),
+    z.object({
+      amount: z.number(),
+      currency: z.string().length(3),
+    }),
+    z.object({
+      id: z.number(),
+      email: z.string().email(),
+      firstName: z.string(),
+      lastName: z.string(),
+      displayName: z.string(),
+    }),
+    z.object({
+      statusId: z.string(),
+      groupName: z.string(),
+      label: z.string(),
+    }),
+    z.null(),
+  ]),
 });
 
 export async function updateMatter(req: Request, res: Response): Promise<void> {
   try {
-    const { id } = req.params;
-
-    if (!id) {
-      res.status(400).json({ error: 'Matter ID is required' });
-      return;
-    }
-
+    const { id } = paramsSchema.parse(req.params);
     const body = updateSchema.parse(req.body);
     
     // Default user ID (in production, this would come from authentication)
@@ -31,12 +51,17 @@ export async function updateMatter(req: Request, res: Response): Promise<void> {
     
     res.json(updatedMatter);
   } catch (error) {
-    logger.error(`Error updating matter ${JSON.stringify(error)}`);
+    logger.error('Error updating matter', { error, matterId: req.params.id });
     
     if (error instanceof z.ZodError) {
+      // Sanitize validation errors to avoid leaking internal structure
+      const sanitizedErrors = error.errors.map(err => ({
+        field: err.path.join('.'),
+        message: err.message
+      }));
       res.status(400).json({
-        error: 'Invalid request body',
-        details: error.errors,
+        error: 'Invalid request data',
+        details: sanitizedErrors,
       });
       return;
     }

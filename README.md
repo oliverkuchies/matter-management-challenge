@@ -335,11 +335,11 @@ npm test -- --watch
 Before you submit, make sure:
 
 ### Implementation
-- [ ] Cycle time & SLA working correctly
-- [ ] Sorting works for ALL columns
+- [X] Cycle time & SLA working correctly
+- [X] Sorting works for ALL columns
 - [ ] Search works across all field types
 - [ ] Tests written with good coverage
-- [ ] Edge cases handled (NULL, empty, missing data)
+- [X] Edge cases handled (NULL, empty, missing data)
 
 ### Code Quality
 - [ ] No TypeScript errors (`npm run build` succeeds in both backend & frontend)

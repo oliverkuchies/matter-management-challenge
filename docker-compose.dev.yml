@@ -64,6 +64,8 @@ services:
     environment:
       DATABASE_URL: postgres://matter:matter@postgres:5432/matter_db
       REDIS_URL: redis://redis:6379
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       PORT: 3000
       NODE_ENV: development
       SLA_THRESHOLD_HOURS: 8

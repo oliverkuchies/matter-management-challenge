@@ -14,14 +14,15 @@ export function useStatusFieldOptions() {
     try {
       const response = await fetch(`${API_URL}/status/options`);
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Don't expose HTTP status to users
+        throw new Error('Failed to load status options');
       }
 
       const result: StatusFieldValue[] = await response.json();
       setStatusFields(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch status field options');
-      console.error('Error fetching status field options:', err);
+      // Don't leak error details to UI
+      setError('Failed to load status options. Please try again.');
     } finally {
       setLoading(false);
     }
