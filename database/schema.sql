@@ -159,14 +159,19 @@ CREATE INDEX idx_cycle_time_histories_from_status ON ticketing_cycle_time_histor
 CREATE INDEX idx_cycle_time_histories_transitioned_at ON ticketing_cycle_time_histories(transitioned_at);
 CREATE INDEX idx_status_options_group_id ON ticketing_field_status_options(group_id);
 
--- Indexes for text search
+-- Indexes for text search (using pg_trgm extension for fuzzy/partial matching)
 CREATE INDEX idx_ticket_field_value_text_trgm ON ticketing_ticket_field_value USING gin (text_value gin_trgm_ops);
 CREATE INDEX idx_ticket_field_value_string_trgm ON ticketing_ticket_field_value USING gin (string_value gin_trgm_ops);
 
--- Indexes for sorting and filtering
+-- Indexes for sorting and filtering on field values
 CREATE INDEX idx_ticket_field_value_number ON ticketing_ticket_field_value(number_value);
 CREATE INDEX idx_ticket_field_value_date ON ticketing_ticket_field_value(date_value);
 CREATE INDEX idx_ticketing_ticket_created_at ON ticketing_ticket(created_at);
+CREATE INDEX idx_ticket_field_value_user ON ticketing_ticket_field_value(user_value);
+
+-- Composite indexes for faster field lookups (ticket + field combination)
+CREATE INDEX idx_ticket_field_composite ON ticketing_ticket_field_value(ticket_id, ticket_field_id);
+CREATE INDEX idx_ticket_field_status_composite ON ticketing_ticket_field_value(ticket_id, status_reference_value_uuid) WHERE status_reference_value_uuid IS NOT NULL;
 
 -- Create the materialized view for searching and sorting tickets
 CREATE MATERIALIZED VIEW ticket_search_index AS
@@ -233,8 +238,9 @@ LEFT JOIN ticketing_field_options tfo ON tfo.id = ttfv.select_reference_value_uu
 LEFT JOIN users u ON u.id = ttfv.user_value
 GROUP BY tt.id, tt.board_id, tt.created_at, tt.updated_at;
 
--- Create indexes for fast searching and sorting
+-- Create indexes for fast searching and sorting on the materialized view
 CREATE INDEX idx_ticket_search_text ON ticket_search_index USING gin(search_vector);
+CREATE INDEX idx_ticket_search_searchable ON ticket_search_index USING gin(searchable_text gin_trgm_ops);
 CREATE INDEX idx_ticket_search_created ON ticket_search_index(created_at DESC);
 CREATE UNIQUE INDEX idx_ticket_search_id ON ticket_search_index(id);
 -- Indexes for sortable columns
@@ -244,3 +250,15 @@ CREATE INDEX idx_ticket_search_priority ON ticket_search_index(priority_sort);
 CREATE INDEX idx_ticket_search_due_date ON ticket_search_index(due_date_sort);
 CREATE INDEX idx_ticket_search_contract_value ON ticket_search_index(contract_value_sort);
 CREATE INDEX idx_ticket_search_assigned_to ON ticket_search_index(assigned_to_sort);
+CREATE INDEX idx_ticket_search_case_number ON ticket_search_index(case_number_sort);
+
+-- Indexes for cycle time and SLA calculations (resolution time filtering)
+-- These support fast lookup of status transition histories for cycle time computation
+CREATE INDEX idx_cycle_time_ticket_status ON ticketing_cycle_time_histories(ticket_id, status_field_id);
+CREATE INDEX idx_cycle_time_ticket_transitioned ON ticketing_cycle_time_histories(ticket_id, transitioned_at);
+-- Composite index for ordered transitions per ticket (critical for SLA/resolution time calculations)
+CREATE INDEX idx_cycle_time_transitions_ordered ON ticketing_cycle_time_histories(ticket_id, transitioned_at ASC, to_status_id);
+
+-- Index for finding tickets by status group (used in SLA filtering)
+CREATE INDEX idx_status_options_label ON ticketing_field_status_options(label);
+CREATE INDEX idx_status_groups_name ON ticketing_field_status_groups(name);
