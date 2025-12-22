@@ -11,13 +11,6 @@ My Notes
 - Added React Query for easier updating & retrieval of content. This means that state is managed more on the backend than the frontend, allowing for fresh data when a user sees the page. For instance, if two legal team members are updating the page at once, it would be helpful for latest data to be presented to the other user. Tanstack allows for this using refetching
 - Updated lint rules (including prettier.)
 
-
-AI Usage
-Where I did NOT use AI:
-- Algorithms
-- Query building
-
-
 Where I did use AI:
 - Created StatusCell with AI, but created auto tests on my own to make sure it meets the necessary criteria. Also ensured it meeted expected standards i.e. Tailwind etc. Noticed dropdown was displaying in a broken fashion, added flex, and flex-col to organise it in the correct manner.
 - Utilised for refactoring. I created the repository base methods, but refactored the existing repos to use them.
@@ -26,11 +19,7 @@ Where I did use AI:
 - Optimising existing queries
   - When building the multi join query to determine the diff between JOINS i realised that ADVANCED sql could be used to retrieve a diff value. I utilise LLMs to develop this, and validated the logic. As a result, it resulted in 66% reduction in time taken due to less joins.
 - Used it to create components like Search Bar, but spent a lot of time afterward cleaning up issues such as poor presentational separation of concerns, and also addressing losing focus upon state change. I fixed this by decoupling searchbar from mattertable.
-## TODO
-Setup caching.
-Encapsulate caching.
-Implement versioning & invalidation.
-
+- Used AI to create filter based components - i was spending way too much time on this assignment :') But I manually tested each one, and can explain their functionality thoroughly
 
 ## DB Optimisation.
 
@@ -83,6 +72,7 @@ Now its using ANY($1) (which is something like IN(x,y,z) in MySQL), which retrie
 Cleaned up matter table, it was quite repetitive (hard coded). I used a loop to traverse all items instead and display them such as th, and td.
 
 - Moved thead away from tbody so that thead is loaded all the time, regardless of state.
+- Zustand is used for matter global state management. A bit more flexible than React context.
 
 # Search Optimisation
 - Added Search using a materialised view, which is a lot more friendly with EAV (due to complexity of joins and cases).
@@ -101,8 +91,45 @@ ORDER BY created_at DESC
 LIMIT 25 OFFSET 0;
 
 Supposedly EAV in general is an anti-pattern and not recommended, but if we were to add a layer on top of this for scale we could use Elastic Search (perhaps with Postgres sync). 
+I think that these Matters would function better as MongoDB documents, it would allow a loose sortable structure that is managed on the app layer, and typed.
+
+# Difficulties
+There was a difficulty getting search to work for the "in memory" values such as SLA or resolution time. The reason for this was because the logic was processed in TS backend. If it was processed in SQL, it would be easier to create queries.
+I had to pull a batch of 10,000 items in-order to do this search successfully, but even this has limitations. 10,000 gives a good pool of matters to search through but may not be enough for clients with up to 100K matters.
 
 
 ## Assumptions
 -> When a ticket has progressed, but then moved back to todo -> it is still prefixed with In Progress:
 -> When a ticket has not progressed, and has no time associated with it, it returns '-'
+-> Search against SLA & Resolution Time is a bit tricky with time constraints of task. I have added additional search filter boxes to assist with these.
+-> I have the EAV as a materialised table as EAV has lots of joins which isn't optimal.
+
+**If this system needed to handle 10× the current load (100,000 matters, 1,000+ concurrent users), what would you do?**
+
+I would partition based on the hash of the matter id along with the created at address. This would allow for scale and a high cardinality partition.
+I also think the current data structure isn't optimal for developers nor scale. It would make more sense to use a document based approach for each matter as opposed to this multi-join system. The matters are documents after all, and MongoDB is able to scale horizontally while Postgres can only scale vertically.
+
+I cant tell you too much about ElasticSearch, i've never implemented it. But I hear that it supports > 64 indexes which is the cap for Mongo and other databases. For search solutions it could come in handy, but perhaps its over optimising. First step would be to move to Mongo to avoid joins, which would decrease queries substantially. Cost for ElasticSearch is quite pricey from what i've heard, but MongoDB should be pretty much inline with current implementation.
+
+Postgres can certainly remain for user rego etc, where transactions are required. RDBMS are better for transaction management and offer very strong consistency along with linearization. Great for managing race conditions.
+
+There are great tools for connection pooling such as Aurora DB Proxy which allows for multiple connections to be pooled as one. We have had great success with this. I would recommend this, the cost is minimal.
+
+If consistency is required, then quorums can be utilised with DB tools such as CassandraDB, which are object based like Mongo. This would allow for stronger consistency across user usage.
+
+I have implemented materialised views but the limitation is that every mutation requires an update to be made, and a cron would not be sufficient since it would not respect the data that needs to be visible to the user.
+
+Adding caching on a repository level would also be helpful (as some queries may repeat themselves), but I have added it on a service level which should suffice for this exercise.
+
+Using read replication can be helpful for RDBMS systems so that reads are not overloading the system. 
+Using Redis clusters with multiple replicas can also be helpful as they would reduce load on cache calls.
+
+Another consideration is the region of the users. If delivering cross region, it becomes quite expensive to cater for each region. For instance, if i have clients in US and AU, the connection from US to AU will take a lot of latency. However, adding US and AU servers will be expensive.
+
+
+These thoughs are not inspired by AI or anything like that, i've genuinely had a think - perhaps I have more to learn but these are my thoughts about the Manner Management system.
+
+Thanks for the fun learning exercise. :)
+
+## Other recommendations
+- Adding a monorepo structure could be handy here as some utilities are imported twice in package.jsons.

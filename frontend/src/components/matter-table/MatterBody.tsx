@@ -27,7 +27,9 @@ const renderFieldValue = (
     if (column.fieldName === 'sla') {
       const sla = matter.sla;
       return (
-        <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadgeColor(sla || '')}`}>
+        <span
+          className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeColor(sla || '')}`}
+        >
           {sla || 'N/A'}
         </span>
       );

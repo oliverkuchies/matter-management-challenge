@@ -1,4 +1,4 @@
-import { TransformedMatter, FieldValueType } from '../../types/types.js';
+import { Matter, FieldValueType } from '../../types/types.js';
 
 /**
  * Sorts matters based on the specified field and order
@@ -8,10 +8,10 @@ import { TransformedMatter, FieldValueType } from '../../types/types.js';
  * @returns Sorted array of matters
  */
 export function sortMatters(
-  matters: TransformedMatter[],
+  matters: Matter[],
   sortBy: string,
   sortOrder: string,
-): TransformedMatter[] {
+): Matter[] {
   return matters.sort((a, b) => {
     let aValue: FieldValueType;
     let bValue: FieldValueType;

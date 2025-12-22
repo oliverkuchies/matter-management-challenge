@@ -1,0 +1,1 @@
+export { ResolutionTimeFilterComponent } from './ResolutionTimeFilter';

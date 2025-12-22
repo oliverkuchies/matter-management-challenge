@@ -89,10 +89,10 @@ Add sorting support for all field types: ✅ (TODO: Check if performable on a db
 - **Boolean fields**: Sort by true/false ✅ 
 
 **Challenges**:
-- EAV pattern means field values are in a separate table
-- Need to join with `ticketing_ticket_field_value` efficiently
-- Handle NULL values (not all matters have all fields)
-- Avoid N+1 queries
+- EAV pattern means field values are in a separate table  ✅ 
+- Need to join with `ticketing_ticket_field_value` efficiently  ✅ 
+- Handle NULL values (not all matters have all fields)  ✅ 
+- Avoid N+1 queries  ✅ 
 
 **Frontend** (`frontend/src/components/MatterTable.tsx`):
 
@@ -114,13 +114,13 @@ Add sort click handlers to all column headers:
 **Backend** (`backend/src/ticketing/matter/repo/matter_repo.ts`):
 
 Implement search across all fields:
-- Text fields (subject, description)
-- Number fields (case number)
-- Status labels
-- User names
-- Currency values
-- Dates
-- Cycle times and SLA (after implementing Task 1)
+- Text fields (subject, description)  ✅ 
+- Number fields (case number)  ✅ 
+- Status labels  ✅ 
+- User names ✅ 
+- Currency values ✅ 
+- Dates  ✅ 
+- Cycle times and SLA (after implementing Task 1) ✅ 
 
 **Frontend** (`frontend/src/App.tsx`):
 - Add search bar component with debouncing (500ms recommended)  ✅ 
@@ -130,15 +130,15 @@ Implement search across all fields:
 **Performance**:
 - Use PostgreSQL pg_trgm extension (already enabled in schema)
 - Consider index usage
-- Handle 10,000+ records efficiently
+- Handle 10,000+ records efficiently 
 
 ### 4. Write Tests 🧪
 
 Add test coverage for:
-- **Unit Tests**: Cycle time calculations, SLA determination, duration formatting
-- **Integration Tests**: API endpoints with real database queries, sorting with different field types
-- **Edge Cases**: NULL values, empty history, partial data, sorting with missing fields
-- **Frontend Tests** (optional but valued): Component rendering, search behavior
+- **Unit Tests**: Cycle time calculations, SLA determination, duration formatting ✅ 
+- **Integration Tests**: API endpoints with real database queries, sorting with different field types ✅ 
+- **Edge Cases**: NULL values, empty history, partial data, sorting with missing fields ✅ 
+- **Frontend Tests** (optional but valued): Component rendering, search behavior ✅ 
 
 Use the existing Vitest setup (`backend/vitest.config.ts`).
 
@@ -149,8 +149,8 @@ In your `README.md` submission, address:
 **If this system needed to handle 10× the current load (100,000 matters, 1,000+ concurrent users), what would you do?**
 
 Consider:
-- Database optimization (indexes, materialized views, partitioning)
-- Caching strategies (Redis, query caching)
+- Database optimization (indexes, materialized views, partitioning) 
+- Caching strategies (Redis, query caching) 
 - Application scaling (horizontal scaling, load balancing)
 - Search optimization (Elasticsearch migration)
 - Connection pooling adjustments

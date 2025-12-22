@@ -2,9 +2,15 @@ import { Matter, MatterListParams, FieldValue, UserValue, CurrencyValue, StatusV
 import logger from '../../../utils/logger.js';
 import { Repository, WrappedPoolClient } from '../../../repository/repository.js';
 import { CountRow, CurrentStatusRow, FieldValueRow, MatterRow, StatusOptionRow, TicketingTimeEntryRow } from './types/types.js';
+import { redis } from '../../../cache/cache-client.js';
+
+export interface TransitionInfo {
+  totalDurationMs: number;
+  transitions: TicketingTimeEntryRow[];
+}
 
 export class MatterRepo extends Repository {
-  async getTransitionInfo(matterId: string) {
+  async getTransitionInfo(matterId: string): Promise<TransitionInfo> {
     return this.executeAndRelease(async (client) => {
       const rows = await this.queryRows<TicketingTimeEntryRow>(
         client,
@@ -53,6 +59,15 @@ export class MatterRepo extends Repository {
    * { displayValue: "Closed", sequence: 3, statusGroupId: "status-3" }
    */
     async getAllStatuses(): Promise<StatusFieldValue[]> {
+      const cacheKey = 'statuses:all';
+      
+      // Try to get from cache first
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        logger.debug('Cache hit for all statuses');
+        return JSON.parse(cached);
+      }
+
       return this.executeAndRelease(async (client) => {
         const rows = await this.queryRows<StatusOptionRow>(
           client,
@@ -63,11 +78,17 @@ export class MatterRepo extends Repository {
           return [];
         }
 
-        return rows.map((row) => ({
+        const statuses = rows.map((row) => ({
           displayValue: row.label,
           sequence: row.sequence,
           statusGroupId: row.id,
         }));
+
+        // Cache for 1 hour (statuses rarely change)
+        await redis.set(cacheKey, JSON.stringify(statuses), 'EX', 3600);
+        logger.debug('Cached all statuses');
+        
+        return statuses;
       });
     }
 
@@ -93,11 +114,23 @@ export class MatterRepo extends Repository {
    * - Implement query result caching
    * - Use connection pooling effectively
    */
-  async getMatters(params: MatterListParams) {
+  async getMatters(params: MatterListParams) : Promise<{ matters: Matter[]; total: number }> {
     const { page = 1, limit = 25, sortBy = 'created_at', sortOrder = 'asc' } = params;
     const offset = (page - 1) * limit;
 
-    return await this.executeAndRelease<{ matters: Matter[]; total: number }>(async (client) => {
+    // Create cache key from query parameters
+    const cacheKey = `matters:${JSON.stringify({ page, limit, sortBy, sortOrder, search: params.search })}`;
+    
+    // Try cache first (only for first page without search to avoid cache bloat)
+    if (page === 1 && !params.search) {
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        logger.debug('Cache hit for matters list', { page, sortBy, sortOrder });
+        return JSON.parse(cached);
+      }
+    }
+
+    const result = await this.executeAndRelease<{ matters: Matter[]; total: number }>(async (client) => {
       const searchTerm = params.search ?? '';
       const hasSearch = searchTerm.trim().length > 0;
 
@@ -198,6 +231,14 @@ export class MatterRepo extends Repository {
 
       return { matters, total };
     });
+
+    // Cache the result for first page without search (60 second TTL)
+    if (page === 1 && !params.search) {
+      await redis.set(cacheKey, JSON.stringify(result), 'EX', 60);
+      logger.debug('Cached matters list', { page, sortBy, sortOrder });
+    }
+
+    return result;
   }
 
   /**
@@ -504,6 +545,15 @@ export class MatterRepo extends Repository {
       );
 
       await this.refreshSingleMatterSearchIndex(client, matterId);
+      
+      // Invalidate matters list cache when a matter is updated
+      // Use pattern matching to clear all variations of the matters list cache
+      const pattern = 'matters:*';
+      const keys = await redis.keys(pattern);
+      if (keys.length > 0) {
+        await redis.del(...keys);
+        logger.debug('Invalidated matters list cache after update', { count: keys.length });
+      }
     }, (error) => {
       logger.error('Failed to update matter field' + JSON.stringify({ error, matterId, fieldId }));
     });

@@ -20,7 +20,8 @@ async function updateMatterStatus({ matterId, fieldId, statusId }: UpdateStatusP
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to update status: ${response.statusText}`);
+    // Don't expose HTTP status text to users
+    throw new Error('Failed to update status. Please try again.');
   }
 
   return response.json();

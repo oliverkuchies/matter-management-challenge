@@ -4,11 +4,8 @@ import { MatterBody } from './MatterBody';
 import { MATTER_TABLE_COLUMNS } from './MatterTableWrapper';
 
 export function MatterBodyWrapper() {
-  const page = useMatterStore((state) => state.page);
-  const limit = useMatterStore((state) => state.limit);
-  const sortBy = useMatterStore((state) => state.sortBy);
-  const sortOrder = useMatterStore((state) => state.sortOrder);
-  const search = useMatterStore((state) => state.search);
+  const { page, limit, sortBy, sortOrder, search, slaFilter, resolutionTimeFilter, dueDateFilter } =
+    useMatterStore();
 
   const { data, loading, error } = useMatters({
     page,
@@ -16,6 +13,9 @@ export function MatterBodyWrapper() {
     sortBy,
     sortOrder,
     search,
+    sla: slaFilter,
+    resolutionTime: resolutionTimeFilter,
+    dueDate: dueDateFilter,
   });
 
   if (loading) {

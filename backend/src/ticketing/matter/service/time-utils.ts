@@ -1,4 +1,7 @@
-import { StatusGroupEnum } from "./cycle_time_service.js";
+import { CycleTime } from "../../types/types.js";
+import { TransitionInfo } from "../repo/matter_repo.js";
+import { SLAStatusEnum, StatusGroupEnum } from "./cycle_time_service.js";
+import { intervalToDuration } from 'date-fns';
 
 /**
  * 
@@ -15,32 +18,103 @@ import { StatusGroupEnum } from "./cycle_time_service.js";
 export function formatDuration(durationMs: number = 0, statusGroup: string): string {
     let timeString = '';
 
-    if (statusGroup === StatusGroupEnum.TO_DO && durationMs === 0 || statusGroup === StatusGroupEnum.IN_PROGRESS && durationMs === 0) {
+    // Return '-' for To Do or In Progress with 0 duration
+    if ((statusGroup === StatusGroupEnum.TO_DO || statusGroup === StatusGroupEnum.IN_PROGRESS) && durationMs === 0) {
         return '-';
     }
 
-    if (statusGroup === StatusGroupEnum.TO_DO || statusGroup === StatusGroupEnum.IN_PROGRESS && durationMs > 0) {
+    // Return empty string for Done with 0 duration
+    if (statusGroup === StatusGroupEnum.DONE && durationMs === 0) {
+        return '';
+    }
+
+    // Only add "In Progress:" prefix for IN_PROGRESS status (not TO_DO)
+    if ((statusGroup === StatusGroupEnum.IN_PROGRESS || statusGroup === StatusGroupEnum.TO_DO) && durationMs > 0) {
       timeString += 'In Progress:';
     }
 
-    const seconds = durationMs / 1000;
-    const minutes = seconds / 60;
-    const totalHours = Math.floor(minutes / 60);
-    const days = Math.floor(totalHours / 24);
-    const remainingHours = totalHours % 24;
-    const remainingMinutes = Math.floor(minutes % 60);
+    // Use date-fns to calculate duration components
+    const duration = intervalToDuration({ start: 0, end: durationMs });
+    
+    const years = duration.years || 0;
+    const months = duration.months || 0;
+    const days = duration.days || 0;
+    const hours = duration.hours || 0;
+    const minutes = duration.minutes || 0;
+
+    if (years > 0) {
+      timeString += ` ${years}y`;
+    }
+
+    if (months > 0) {
+      timeString += ` ${months}m`;
+    }
 
     if (days > 0) {
-      timeString += ` ${days}d`
+      timeString += ` ${days}d`;
     }
 
-    if (remainingHours > 0) {
-      timeString += ` ${remainingHours}h`
+    if (hours > 0) {
+      timeString += ` ${hours}h`;
     }
 
-    if (remainingMinutes > 0) {
-      timeString += ` ${remainingMinutes}m`
+    if (minutes > 0) {
+      timeString += ` ${minutes}mins`;
     }
 
     return timeString.trim();
 }
+
+ /**
+   * Calculate cycle time for a given ticket
+   * @param ticketId - The ID of the ticket to calculate cycle time for
+   * @returns The CycleTime object containing resolution time and timestamps
+   */
+  export function calculateCycleTime(transitionInfo: TransitionInfo): CycleTime {
+    const firstRow = transitionInfo.transitions[0];
+    const lastTransition = transitionInfo.transitions[transitionInfo.transitions.length - 1];
+  
+      if (!lastTransition || lastTransition.name !== StatusGroupEnum.DONE) {
+        return {
+          resolutionTimeMs: transitionInfo.totalDurationMs,
+          resolutionTimeFormatted: formatDuration(transitionInfo.totalDurationMs, lastTransition.name),
+          isInProgress: true,
+          startedAt: firstRow.changed_at,
+          completedAt: null,
+        }
+      }
+          
+      return {
+        resolutionTimeMs: transitionInfo.totalDurationMs,
+        resolutionTimeFormatted: formatDuration(transitionInfo.totalDurationMs, lastTransition.name),
+        isInProgress: false,
+        startedAt: firstRow.changed_at,
+        completedAt: lastTransition.changed_at
+      }
+  }
+
+  /**
+   * Calculate SLA status based on resolution time and progress
+   * @param resolutionTimeMs - The resolution time in milliseconds
+   * @param isInProgress - Whether the ticket is still in progress
+   * @returns The SLA status as 'In Progress', 'Met', or 'Breached'
+   **
+   */
+  export function calculateSLAStatus(resolutionTimeMs: number = 0, slaThreshHoldMs: number, isInProgress: boolean = false): SLAStatusEnum {
+    if (isInProgress && resolutionTimeMs <= slaThreshHoldMs) {
+      return SLAStatusEnum.IN_PROGRESS;
+    }
+    if (resolutionTimeMs === null) {
+      return SLAStatusEnum.IN_PROGRESS;
+    }
+
+    if (resolutionTimeMs <= slaThreshHoldMs) {
+      return SLAStatusEnum.MET;
+    }
+
+    if (isInProgress) {
+      return SLAStatusEnum.BREACHED;
+    }
+
+    return SLAStatusEnum.BREACHED;
+  }

@@ -71,6 +71,23 @@ export interface CycleTime {
 
 export type SLAStatus = 'In Progress' | 'Met' | 'Breached';
 
+export type SLAFilter = 'All' | SLAStatus;
+
+export type ResolutionTimeFilter =
+  | 'All'
+  | 'Under 1 hour'
+  | '1-4 hours'
+  | '4-8 hours'
+  | 'Over 8 hours';
+
+export type DueDateFilter =
+  | 'All'
+  | 'Overdue'
+  | 'Due Today'
+  | 'Due This Week'
+  | 'Due This Month'
+  | 'No Due Date';
+
 export interface MatterListResponse {
   data: Matter[];
   total: number;

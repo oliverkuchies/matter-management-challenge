@@ -43,8 +43,8 @@ logs-backend: ## Tail backend logs only
 logs-frontend: ## Tail frontend logs only
 	docker compose logs -f frontend
 
-clean: ## Remove all containers, volumes, and images
-	docker compose down -v --rmi all
+clean: ## Remove all containers and volumes (keeps images)
+	docker compose down -v
 
 test-backend: ## Run backend tests
 	cd backend && npm test

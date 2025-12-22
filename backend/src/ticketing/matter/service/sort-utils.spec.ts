@@ -1,51 +1,51 @@
 import { describe, it, expect } from 'vitest';
 import { sortMatters } from './sort-utils.js';
 import { createMockMatter } from '../test-utils.js';
-import { TransformedMatter } from '../../types/types.js';
+import { Matter } from '../../types/types.js';
 
 describe('sortMatters', () => {
   describe('computed field sorting (SLA and resolution time)', () => {
     it('should sort by SLA in ascending order', () => {
-      const matters: TransformedMatter[] = [
-        createMockMatter('1', {}, 100),
-        createMockMatter('2', {}, 50),
-        createMockMatter('3', {}, 200),
+      const matters: Matter[] = [
+        createMockMatter('1', {}, 'Met'),
+        createMockMatter('2', {}, 'In Progress'),
+        createMockMatter('3', {}, 'Breached'),
       ];
 
       const sorted = sortMatters([...matters], 'sla', 'asc');
-      expect(sorted[0].id).toBe('2'); // 50
-      expect(sorted[1].id).toBe('1'); // 100
-      expect(sorted[2].id).toBe('3'); // 200
+      expect(sorted[0].id).toBe('3'); // In Progress
+      expect(sorted[1].id).toBe('2'); // Met
+      expect(sorted[2].id).toBe('1'); // Breached
     });
 
     it('should sort by SLA in descending order', () => {
-      const matters: TransformedMatter[] = [
-        createMockMatter('1', {}, 100),
-        createMockMatter('2', {}, 50),
-        createMockMatter('3', {}, 200),
+      const matters: Matter[] = [
+        createMockMatter('1', {}, 'Met'),
+        createMockMatter('2', {}, 'In Progress'),
+        createMockMatter('3', {}, 'Breached'),
       ];
 
       const sorted = sortMatters([...matters], 'sla', 'desc');
-      expect(sorted[0].id).toBe('3'); // 200
-      expect(sorted[1].id).toBe('1'); // 100
-      expect(sorted[2].id).toBe('2'); // 50
+      expect(sorted[0].id).toBe('1'); // Breached
+      expect(sorted[1].id).toBe('2'); // Met
+      expect(sorted[2].id).toBe('3'); // In Progress
     });
 
     it('should handle null SLA values', () => {
-      const matters: TransformedMatter[] = [
-        createMockMatter('1', {}, 100),
-        createMockMatter('2', {}, null),
-        createMockMatter('3', {}, 50),
+      const matters: Matter[] = [
+        createMockMatter('1', {}, 'Met'),
+        createMockMatter('2', {}, 'In Progress'),
+        createMockMatter('3', {}, 'In Progress'),
       ];
 
       const sorted = sortMatters([...matters], 'sla', 'asc');
-      expect(sorted[0].id).toBe('3'); // 50
-      expect(sorted[1].id).toBe('1'); // 100
-      expect(sorted[2].id).toBe('2'); // null (sorted last)
+      expect(sorted[0].id).toBe('2'); // In Progress
+      expect(sorted[1].id).toBe('3'); // In Progress
+      expect(sorted[2].id).toBe('1'); // Met
     });
 
     it('should sort by resolution_time in ascending order', () => {
-      const matters: TransformedMatter[] = [
+      const matters: Matter[] = [
         {
           ...createMockMatter('1', {}),
           cycleTime: {
@@ -85,7 +85,7 @@ describe('sortMatters', () => {
     });
 
     it('should sort by resolution_time in descending order', () => {
-      const matters: TransformedMatter[] = [
+      const matters: Matter[] = [
         {
           ...createMockMatter('1', {}),
           cycleTime: {
@@ -125,7 +125,7 @@ describe('sortMatters', () => {
     });
 
     it('should handle null resolution_time values', () => {
-      const matters: TransformedMatter[] = [
+      const matters: Matter[] = [
         {
           ...createMockMatter('1', {}),
           cycleTime: {
