@@ -13,11 +13,11 @@ export class MatterService {
   }
 
   async getMatters(params: MatterListParams): Promise<MatterListResponse> {
-    const { page = 1, limit = 25, sortBy = 'createdAt', sortOrder = 'asc' } = params;
+    const { page = 1, limit = 25 } = params;
     const { matters, total } = await this.matterRepo.getMatters(params);
     
     // Calculate cycle time and SLA for each matter
-    let enrichedMatters : TransformedMatter[] = await Promise.all(
+    const enrichedMatters : TransformedMatter[] = await Promise.all(
       matters.map(async (matter) => {
         const { cycleTime, sla } = await this.cycleTimeService.calculateCycleTimeAndSLA(
           matter.id
@@ -31,11 +31,19 @@ export class MatterService {
       }),
     );
 
-    enrichedMatters = sortMatters(enrichedMatters, sortBy, sortOrder);
+    // Sorting is now handled in the database via materialized view
+    const { sortBy, sortOrder = 'asc' } = params;
+    let finalMatters = enrichedMatters;
+    
+    if (sortBy === 'sla' || sortBy === 'resolution_time') {
+      // These fields are computed after DB query, so we sort in-memory
+      finalMatters = sortMatters(enrichedMatters, sortBy, sortOrder);
+    }
+
     const totalPages = Math.ceil(total / limit);
 
     return {
-      data: enrichedMatters,
+      data: finalMatters,
       total,
       page,
       limit,

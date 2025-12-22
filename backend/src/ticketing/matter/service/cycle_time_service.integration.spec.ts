@@ -106,10 +106,8 @@ describe('CycleTimeService Integration Tests', () => {
 
         expect(cycleTime).toBeDefined();
         expect(cycleTime.resolutionTimeMs).toBeGreaterThan(0);
-        expect(cycleTime.startedAt).toBeInstanceOf(Date);
-        expect(cycleTime.completedAt).toBeInstanceOf(Date);
-        expect(cycleTime.completedAt!.getTime()).toBeGreaterThan(
-          cycleTime.startedAt!.getTime()
+        expect(new Date(cycleTime.completedAt ?? 0)!.getTime()).toBeGreaterThan(
+          new Date(cycleTime.startedAt ?? 0)!.getTime()
         );
         // Done matters should NOT have "In Progress" prefix
         expect(cycleTime.resolutionTimeFormatted).not.toContain('In Progress');

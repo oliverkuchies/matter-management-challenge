@@ -27,6 +27,10 @@ up: ## Start production environment
 down: ## Stop all services
 	docker compose down
 
+reset:
+	docker compose down -v --rmi all
+	docker compose -f docker-compose.dev.yml up -d --build
+
 dev: ## Start development environment with hot reload
 	docker compose -f docker-compose.dev.yml up -d
 
@@ -61,15 +65,29 @@ db-reset: ## Drop all data from dev database tables (keeps schema)
 	docker compose -f docker-compose.dev.yml exec -T postgres psql -U matter -d matter_db -c "$(TRUNCATE_SQL)"
 	@echo "Dev database tables cleared"
 
+db-schema: ## Apply schema.sql to dev database
+	@echo "Applying schema.sql to dev database..."
+	docker compose -f docker-compose.dev.yml exec -T postgres psql -U matter -d matter_db < database/schema.sql
+	@echo "Schema applied successfully"
+
+db-recreate: ## Drop and recreate dev database with schema (stops backend temporarily)
+	@echo "Stopping backend to release database connections..."
+	docker compose -f docker-compose.dev.yml stop backend
+	@echo "Terminating remaining database connections..."
+	docker compose -f docker-compose.dev.yml exec -T postgres psql -U matter -d postgres -c \
+		"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'matter_db' AND pid <> pg_backend_pid();"
+	@echo "Dropping database..."
+	docker compose -f docker-compose.dev.yml exec -T postgres psql -U matter -d postgres -c "DROP DATABASE IF EXISTS matter_db;"
+	@echo "Creating fresh database..."
+	docker compose -f docker-compose.dev.yml exec -T postgres psql -U matter -d postgres -c "CREATE DATABASE matter_db;"
+	@echo "Applying schema..."
+	docker compose -f docker-compose.dev.yml exec -T postgres psql -U matter -d matter_db < database/schema.sql
+	@echo "Restarting backend..."
+	docker compose -f docker-compose.dev.yml start backend
+	@echo "Database recreated with schema successfully"
+
 db-reseed: db-reset ## Clear database and reseed with fresh data
 	docker compose restart seed
-
-db-reseed-dev: db-reset-dev ## Clear dev database and reseed with fresh data
-	@echo "Reseeding dev database..."
-	@echo "Waiting for database to be ready..."
-	@docker compose -f docker-compose.dev.yml exec postgres pg_isready -U matter -d matter_db > /dev/null 2>&1 || true
-	docker compose -f docker-compose.dev.yml run --rm -e DATABASE_URL=postgres://matter:matter@postgres:5432/matter_db seed node seed.js
-	@echo "Dev database reseeded successfully"
 
 health: ## Check health of all services
 	@echo "Checking backend health..."

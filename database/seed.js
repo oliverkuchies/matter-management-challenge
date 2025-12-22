@@ -359,6 +359,11 @@ async function seed() {
       }
     }
     
+    // Refresh materialized view to populate search index
+    console.log('Refreshing search index...');
+    await client.query('REFRESH MATERIALIZED VIEW ticket_search_index');
+    console.log('Search index refreshed');
+    
     console.log('Seed completed successfully!');
     console.log(`Created:
   - 1 account

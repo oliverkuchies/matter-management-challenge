@@ -64,7 +64,7 @@ export class CycleTimeService {
           resolutionTimeMs: transitionInfo.totalDurationMs,
           resolutionTimeFormatted: formatDuration(transitionInfo.totalDurationMs, lastTransition.name),
           isInProgress: true,
-          startedAt: new Date(firstRow.changed_at),
+          startedAt: firstRow.changed_at,
           completedAt: null,
         }
       }
@@ -73,8 +73,8 @@ export class CycleTimeService {
         resolutionTimeMs: transitionInfo.totalDurationMs,
         resolutionTimeFormatted: formatDuration(transitionInfo.totalDurationMs, lastTransition.name),
         isInProgress: false,
-        startedAt: new Date(firstRow.changed_at),
-        completedAt: new Date(lastTransition.changed_at),
+        startedAt: firstRow.changed_at,
+        completedAt: lastTransition.changed_at
       }
   }
 

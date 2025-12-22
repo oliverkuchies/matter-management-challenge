@@ -25,11 +25,12 @@ Where I did use AI:
 - Created core scaffolding for tests, but tweaked them myself to prevent dodgy llm patterns (and also add more cases.)
 - Optimising existing queries
   - When building the multi join query to determine the diff between JOINS i realised that ADVANCED sql could be used to retrieve a diff value. I utilise LLMs to develop this, and validated the logic. As a result, it resulted in 66% reduction in time taken due to less joins.
-
-TODO
+- Used it to create components like Search Bar, but spent a lot of time afterward cleaning up issues such as poor presentational separation of concerns, and also addressing losing focus upon state change. I fixed this by decoupling searchbar from mattertable.
+## TODO
 Setup caching.
 Encapsulate caching.
 Implement versioning & invalidation.
+
 
 ## DB Optimisation.
 
@@ -81,8 +82,27 @@ Now its using ANY($1) (which is something like IN(x,y,z) in MySQL), which retrie
 # UI Optimisation
 Cleaned up matter table, it was quite repetitive (hard coded). I used a loop to traverse all items instead and display them such as th, and td.
 
+- Moved thead away from tbody so that thead is loaded all the time, regardless of state.
+
+# Search Optimisation
+- Added Search using a materialised view, which is a lot more friendly with EAV (due to complexity of joins and cases).
+- This is my first time playing around with search in postgres, but basically the materialised view will collate a collection of searchable vectors using to_tsvector which transforms regular text into a seachable format.
+- I started using EAV with in memory sort, but realised that once the material view was in place, i was able to utilise sort there really easily (by adding more cols).
+ 
+ i.e. 
+'The quick brown fox jumps over the lazy dog' becomes
+'brown':3 'dog':9 'fox':4 'jump':5 'lazi':8 'quick':2
+
+The search columns allow for easy searches. A sample query is as follows:
+
+SELECT * FROM ticket_search_index 
+WHERE search_vector @@ plainto_tsquery('english', 'search term')
+ORDER BY created_at DESC
+LIMIT 25 OFFSET 0;
+
+Supposedly EAV in general is an anti-pattern and not recommended, but if we were to add a layer on top of this for scale we could use Elastic Search (perhaps with Postgres sync). 
+
 
 ## Assumptions
-
 -> When a ticket has progressed, but then moved back to todo -> it is still prefixed with In Progress:
 -> When a ticket has not progressed, and has no time associated with it, it returns '-'

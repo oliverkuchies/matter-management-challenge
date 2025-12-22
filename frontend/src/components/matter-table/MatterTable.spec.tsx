@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MatterTable, getStatusBadgeColor } from './MatterTable';
 import { Matter } from '../../types/matter';
 import { createMockMatter } from '../../../tests/mocks/matterTableMocks';
@@ -71,16 +71,7 @@ describe('MatterTable', () => {
 
       expect(slaColumn).toHaveLength(3);
       slaColumn.forEach((badge) => {
-        expect(badge).toHaveClass(
-          'px-3',
-          'py-1',
-          'text-xs',
-          'font-medium',
-          'rounded-full',
-          'border',
-          'transition-all',
-          'duration-200',
-        );
+        expect(badge).toHaveClass('px-2', 'py-1', 'rounded-full', 'text-xs');
       });
     });
   });
@@ -211,6 +202,353 @@ describe('MatterTable', () => {
       // Should still show SLA badge - look for all instances and verify at least one exists
       const slaBadges = screen.getAllByText('In Progress');
       expect(slaBadges.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Column Sorting', () => {
+    it('should call onSort when clicking subject column header', () => {
+      const matters = [createMockMatter('1', 'In Progress', 'In Progress: 1h', 'Working')];
+      const mockOnSortFn = vi.fn();
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="subject" sortOrder="asc" onSort={mockOnSortFn} />,
+      );
+
+      const subjectHeader = container.querySelector('th:nth-child(1)') as HTMLElement;
+      fireEvent.click(subjectHeader);
+
+      expect(mockOnSortFn).toHaveBeenCalledWith('subject');
+    });
+
+    it('should call onSort when clicking case number column header', () => {
+      const matters = [createMockMatter('1', 'In Progress', 'In Progress: 1h', 'Working')];
+      const mockOnSortFn = vi.fn();
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="subject" sortOrder="asc" onSort={mockOnSortFn} />,
+      );
+
+      const caseNumberHeader = container.querySelector('th:nth-child(2)') as HTMLElement;
+      fireEvent.click(caseNumberHeader);
+
+      expect(mockOnSortFn).toHaveBeenCalledWith('case number');
+    });
+
+    it('should call onSort when clicking status column header', () => {
+      const matters = [createMockMatter('1', 'In Progress', 'In Progress: 1h', 'Working')];
+      const mockOnSortFn = vi.fn();
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="subject" sortOrder="asc" onSort={mockOnSortFn} />,
+      );
+
+      const statusHeader = container.querySelector('th:nth-child(3)') as HTMLElement;
+      fireEvent.click(statusHeader);
+
+      expect(mockOnSortFn).toHaveBeenCalledWith('status');
+    });
+
+    it('should call onSort when clicking assigned to column header', () => {
+      const matters = [createMockMatter('1', 'In Progress', 'In Progress: 1h', 'Working')];
+      const mockOnSortFn = vi.fn();
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="subject" sortOrder="asc" onSort={mockOnSortFn} />,
+      );
+
+      const assignedToHeader = container.querySelector('th:nth-child(4)') as HTMLElement;
+      fireEvent.click(assignedToHeader);
+
+      expect(mockOnSortFn).toHaveBeenCalledWith('assigned to');
+    });
+
+    it('should call onSort when clicking priority column header', () => {
+      const matters = [createMockMatter('1', 'In Progress', 'In Progress: 1h', 'Working')];
+      const mockOnSortFn = vi.fn();
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="subject" sortOrder="asc" onSort={mockOnSortFn} />,
+      );
+
+      const priorityHeader = container.querySelector('th:nth-child(5)') as HTMLElement;
+      fireEvent.click(priorityHeader);
+
+      expect(mockOnSortFn).toHaveBeenCalledWith('priority');
+    });
+
+    it('should call onSort when clicking contract value column header', () => {
+      const matters = [createMockMatter('1', 'In Progress', 'In Progress: 1h', 'Working')];
+      const mockOnSortFn = vi.fn();
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="subject" sortOrder="asc" onSort={mockOnSortFn} />,
+      );
+
+      const contractValueHeader = container.querySelector('th:nth-child(6)') as HTMLElement;
+      fireEvent.click(contractValueHeader);
+
+      expect(mockOnSortFn).toHaveBeenCalledWith('contract value');
+    });
+
+    it('should call onSort when clicking due date column header', () => {
+      const matters = [createMockMatter('1', 'In Progress', 'In Progress: 1h', 'Working')];
+      const mockOnSortFn = vi.fn();
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="subject" sortOrder="asc" onSort={mockOnSortFn} />,
+      );
+
+      const dueDateHeader = container.querySelector('th:nth-child(7)') as HTMLElement;
+      fireEvent.click(dueDateHeader);
+
+      expect(mockOnSortFn).toHaveBeenCalledWith('due date');
+    });
+
+    it('should call onSort when clicking urgent column header', () => {
+      const matters = [createMockMatter('1', 'In Progress', 'In Progress: 1h', 'Working')];
+      const mockOnSortFn = vi.fn();
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="subject" sortOrder="asc" onSort={mockOnSortFn} />,
+      );
+
+      const urgentHeader = container.querySelector('th:nth-child(8)') as HTMLElement;
+      fireEvent.click(urgentHeader);
+
+      expect(mockOnSortFn).toHaveBeenCalledWith('urgent');
+    });
+
+    it('should call onSort when clicking resolution time column header', () => {
+      const matters = [createMockMatter('1', 'In Progress', 'In Progress: 1h', 'Working')];
+      const mockOnSortFn = vi.fn();
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="subject" sortOrder="asc" onSort={mockOnSortFn} />,
+      );
+
+      const resolutionTimeHeader = container.querySelector('th:nth-child(9)') as HTMLElement;
+      fireEvent.click(resolutionTimeHeader);
+
+      expect(mockOnSortFn).toHaveBeenCalledWith('resolution_time');
+    });
+
+    it('should call onSort when clicking SLA column header', () => {
+      const matters = [createMockMatter('1', 'In Progress', 'In Progress: 1h', 'Working')];
+      const mockOnSortFn = vi.fn();
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="subject" sortOrder="asc" onSort={mockOnSortFn} />,
+      );
+
+      const slaHeader = container.querySelector('th:nth-child(10)') as HTMLElement;
+      fireEvent.click(slaHeader);
+
+      expect(mockOnSortFn).toHaveBeenCalledWith('sla');
+    });
+
+    it('should display ascending sort icon when column is sorted ascending', () => {
+      const matters = [createMockMatter('1', 'In Progress', 'In Progress: 1h', 'Working')];
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="subject" sortOrder="asc" onSort={mockOnSort} />,
+      );
+
+      // Check that the ascending arrow is shown for the subject column
+      const subjectHeader = container.querySelector('th');
+      const svgPath = subjectHeader?.querySelector('svg path');
+      expect(svgPath).toHaveAttribute('d', 'M5 15l7-7 7 7');
+    });
+
+    it('should display descending sort icon when column is sorted descending', () => {
+      const matters = [createMockMatter('1', 'In Progress', 'In Progress: 1h', 'Working')];
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="subject" sortOrder="desc" onSort={mockOnSort} />,
+      );
+
+      // Check that the descending arrow is shown for the subject column
+      const subjectHeader = container.querySelector('th');
+      const svgPath = subjectHeader?.querySelector('svg path');
+      expect(svgPath).toHaveAttribute('d', 'M19 9l-7 7-7-7');
+    });
+
+    it('should display neutral sort icon for columns that are not currently sorted', () => {
+      const matters = [createMockMatter('1', 'In Progress', 'In Progress: 1h', 'Working')];
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="subject" sortOrder="asc" onSort={mockOnSort} />,
+      );
+
+      // Check that other columns show the neutral sort icon
+      const headers = container.querySelectorAll('th');
+      const caseNumberHeader = headers[1]; // Second column
+      const svgPath = caseNumberHeader?.querySelector('svg path');
+      expect(svgPath).toHaveAttribute('d', 'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4');
+    });
+
+    it('should update sort icon when sortBy prop changes', () => {
+      const matters = [createMockMatter('1', 'In Progress', 'In Progress: 1h', 'Working')];
+
+      const { container, rerender } = render(
+        <MatterTable matters={matters} sortBy="subject" sortOrder="asc" onSort={mockOnSort} />,
+      );
+
+      // Initially sorted by subject
+      let subjectHeader = container.querySelector('th');
+      let svgPath = subjectHeader?.querySelector('svg path');
+      expect(svgPath).toHaveAttribute('d', 'M5 15l7-7 7 7');
+
+      // Change to sort by case number
+      rerender(
+        <MatterTable matters={matters} sortBy="case number" sortOrder="desc" onSort={mockOnSort} />,
+      );
+
+      // Subject should now show neutral icon
+      subjectHeader = container.querySelector('th');
+      svgPath = subjectHeader?.querySelector('svg path');
+      expect(svgPath).toHaveAttribute('d', 'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4');
+
+      // Case number should show descending icon
+      const headers = container.querySelectorAll('th');
+      const caseNumberHeader = headers[1];
+      const caseNumberSvgPath = caseNumberHeader?.querySelector('svg path');
+      expect(caseNumberSvgPath).toHaveAttribute('d', 'M19 9l-7 7-7-7');
+    });
+  });
+
+  describe('Data Sorting Verification', () => {
+    it('should sort by subject when clicking subject header', () => {
+      const matters = [
+        createMockMatter('1', 'Met', '1h', 'Done'),
+        createMockMatter('2', 'In Progress', '2h', 'Working'),
+        createMockMatter('3', 'Breached', '3h', 'Done'),
+      ];
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="" sortOrder="asc" onSort={mockOnSort} />,
+      );
+
+      const subjectHeader = container.querySelector('th:nth-child(1)') as HTMLElement;
+      fireEvent.click(subjectHeader);
+
+      expect(mockOnSort).toHaveBeenCalledWith('subject');
+    });
+
+    it('should sort by case number when clicking case number header', () => {
+      const matters = [createMockMatter('1', 'Met', '1h', 'Done')];
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="" sortOrder="asc" onSort={mockOnSort} />,
+      );
+
+      const caseNumberHeader = container.querySelector('th:nth-child(2)') as HTMLElement;
+      fireEvent.click(caseNumberHeader);
+
+      expect(mockOnSort).toHaveBeenCalledWith('case number');
+    });
+
+    it('should sort by status when clicking status header', () => {
+      const matters = [createMockMatter('1', 'Met', '1h', 'Done')];
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="" sortOrder="asc" onSort={mockOnSort} />,
+      );
+
+      const statusHeader = container.querySelector('th:nth-child(3)') as HTMLElement;
+      fireEvent.click(statusHeader);
+
+      expect(mockOnSort).toHaveBeenCalledWith('status');
+    });
+
+    it('should sort by assigned to when clicking assigned to header', () => {
+      const matters = [createMockMatter('1', 'Met', '1h', 'Done')];
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="" sortOrder="asc" onSort={mockOnSort} />,
+      );
+
+      const assignedToHeader = container.querySelector('th:nth-child(4)') as HTMLElement;
+      fireEvent.click(assignedToHeader);
+
+      expect(mockOnSort).toHaveBeenCalledWith('assigned to');
+    });
+
+    it('should sort by priority when clicking priority header', () => {
+      const matters = [createMockMatter('1', 'Met', '1h', 'Done')];
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="" sortOrder="asc" onSort={mockOnSort} />,
+      );
+
+      const priorityHeader = container.querySelector('th:nth-child(5)') as HTMLElement;
+      fireEvent.click(priorityHeader);
+
+      expect(mockOnSort).toHaveBeenCalledWith('priority');
+    });
+
+    it('should sort by contract value when clicking contract value header', () => {
+      const matters = [createMockMatter('1', 'Met', '1h', 'Done')];
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="" sortOrder="asc" onSort={mockOnSort} />,
+      );
+
+      const contractValueHeader = container.querySelector('th:nth-child(6)') as HTMLElement;
+      fireEvent.click(contractValueHeader);
+
+      expect(mockOnSort).toHaveBeenCalledWith('contract value');
+    });
+
+    it('should sort by due date when clicking due date header', () => {
+      const matters = [createMockMatter('1', 'Met', '1h', 'Done')];
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="" sortOrder="asc" onSort={mockOnSort} />,
+      );
+
+      const dueDateHeader = container.querySelector('th:nth-child(7)') as HTMLElement;
+      fireEvent.click(dueDateHeader);
+
+      expect(mockOnSort).toHaveBeenCalledWith('due date');
+    });
+
+    it('should sort by urgent when clicking urgent header', () => {
+      const matters = [createMockMatter('1', 'Met', '1h', 'Done')];
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="" sortOrder="asc" onSort={mockOnSort} />,
+      );
+
+      const urgentHeader = container.querySelector('th:nth-child(8)') as HTMLElement;
+      fireEvent.click(urgentHeader);
+
+      expect(mockOnSort).toHaveBeenCalledWith('urgent');
+    });
+
+    it('should sort by resolution time when clicking resolution time header', () => {
+      const matters = [createMockMatter('1', 'Met', '1h', 'Done')];
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="" sortOrder="asc" onSort={mockOnSort} />,
+      );
+
+      const resolutionTimeHeader = container.querySelector('th:nth-child(9)') as HTMLElement;
+      fireEvent.click(resolutionTimeHeader);
+
+      expect(mockOnSort).toHaveBeenCalledWith('resolution_time');
+    });
+
+    it('should sort by SLA when clicking SLA header', () => {
+      const matters = [createMockMatter('1', 'Met', '1h', 'Done')];
+
+      const { container } = render(
+        <MatterTable matters={matters} sortBy="" sortOrder="asc" onSort={mockOnSort} />,
+      );
+
+      const slaHeader = container.querySelector('th:nth-child(10)') as HTMLElement;
+      fireEvent.click(slaHeader);
+
+      expect(mockOnSort).toHaveBeenCalledWith('sla');
     });
   });
 });

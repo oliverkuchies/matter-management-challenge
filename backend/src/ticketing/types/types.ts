@@ -8,7 +8,7 @@ export interface Matter {
 
 export interface TransformedMatter extends Matter {
   cycleTime: CycleTime;
-  sla: SLAStatus;
+  sla: SLAStatus | null;
 }
 
 export type FieldValueType = string | number | boolean | Date | CurrencyValue | UserValue | StatusValue | null;

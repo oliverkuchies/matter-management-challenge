@@ -1,12 +1,7 @@
-import { MatterManagementProvider } from './context/MatterManagementContext';
 import { MatterContainer } from './views/MatterContainer';
 
 function App() {
-  return (
-    <MatterManagementProvider>
-      <MatterContainer />
-    </MatterManagementProvider>
-  );
+  return <MatterContainer />;
 }
 
 export default App;
